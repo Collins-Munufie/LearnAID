@@ -21,10 +21,11 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         await login(email, password);
+        navigate('/dashboard');
       } else {
         await register(email, password);
+        navigate('/');
       }
-      navigate('/generate');
     } catch (err) {
       setError(err.response?.data?.detail || "Authentication failed. Please try again.");
     } finally {

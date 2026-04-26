@@ -44,18 +44,22 @@ export const AuthProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     setToken(response.data.access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+    await fetchUser();
   };
 
   const register = async (email, password) => {
     const response = await axios.post('http://127.0.0.1:8000/api/auth/register', { email, password });
     setToken(response.data.access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+    await fetchUser();
   };
 
   const logout = () => {
     setToken(null);
   };
 
-  const value = { user, token, loading, login, register, logout };
+  const value = { user, token, loading, login, register, logout, fetchUser };
 
   return (
     <AuthContext.Provider value={value}>

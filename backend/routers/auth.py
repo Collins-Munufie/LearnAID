@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -71,6 +72,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 @router.post("/register", response_model=Token)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", user.email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    
+    if len(user.password) < 8 or not re.search(r"[A-Za-z]", user.password) or not re.search(r"\d", user.password):
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long and contain both letters and numbers")
+        
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -104,4 +111,18 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
 @router.get("/me")
 def read_users_me(current_user: models.User = Depends(get_current_user)):
-    return {"email": current_user.email, "id": current_user.id}
+    stats = current_user.stats
+    return {
+        "user": {
+            "name": current_user.email.split('@')[0],
+            "email": current_user.email,
+            "id": current_user.id
+        },
+        "stats": {
+            "quiz_attempts": stats.quiz_attempts if stats else 0,
+            "quizAccuracy": stats.quiz_accuracy if stats else 0,
+            "trueFalseAccuracy": stats.true_false_accuracy if stats else 0,
+            "fillBlankAccuracy": stats.fill_blank_accuracy if stats else 0,
+            "total_flashcards_studied": stats.total_flashcards_studied if stats else 0,
+        }
+    }

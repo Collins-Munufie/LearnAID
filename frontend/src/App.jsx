@@ -4,6 +4,7 @@ import Generator from './components/Generator';
 import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import StudyMode from './components/StudyMode';
+import LandingPage from './components/LandingPage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -19,7 +20,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/generate" />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <AuthPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/generate" element={<Generator />} />

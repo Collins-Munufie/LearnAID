@@ -1,8 +1,7 @@
 import fitz  # PyMuPDF
-from docx import Document
 from pptx import Presentation
+from docx import Document
 import io
-
 def extract_text_from_document(file_bytes: bytes, filename: str) -> str:
     """Extracts text from a locally uploaded PDF, DOCX, PPTX, or TXT file string."""
     ext = filename.lower().split('.')[-1]

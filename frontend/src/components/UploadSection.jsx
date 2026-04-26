@@ -188,20 +188,6 @@ export default function UploadSection({ onUploadFile, onUploadUrl, isGenerating,
         )}
       </div>
       
-      <div className="w-full">
-        <label className="block text-sm font-medium text-brand-muted mb-2 px-2">Flashcard Format</label>
-        <select 
-          value={cardType}
-          onChange={(e) => setCardType(e.target.value)}
-          className="w-full p-4 rounded-xl border border-brand-border bg-brand-surface focus:ring-2 focus:ring-brand-primary outline-none"
-          disabled={isGenerating}
-        >
-          <option value="Standard Q&A">Standard Q&A</option>
-          <option value="True/False">True/False</option>
-          <option value="Fill-in-the-blank">Fill in the blank</option>
-        </select>
-      </div>
-
       <AnimatePresence>
         {error && (
           <motion.div 
