@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Check, X, RotateCcw, BrainCircuit, Play, Layers, CheckCircle2, Type, ArrowRight, Target, AlignLeft, BookOpen, Headphones, PlayCircle, PauseCircle, StopCircle, Hash } from 'lucide-react';
+import { ChevronLeft, Check, X, RotateCcw, BrainCircuit, Play, Layers, CheckCircle2, Type, ArrowRight, Target, AlignLeft, BookOpen, Headphones, PlayCircle, PauseCircle, StopCircle, Hash, FileText } from 'lucide-react';
 import axios from 'axios';
 import StudyChat from './StudyChat';
 import { useAuth } from '../context/AuthContext';
@@ -277,38 +277,38 @@ export default function StudyMode() {
          <div className="flex flex-col gap-2 flex-1">
            <h4 className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">Study Modes</h4>
            
-           <button onClick={() => setActiveMode('notes')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'notes' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-             <AlignLeft className="w-5 h-5" /> Notes
+           <button onClick={() => setActiveMode('notes')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'notes' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+             <AlignLeft className="w-5 h-5 shrink-0" /> <span>Notes</span>
            </button>
            {quizList.length > 0 && (
-             <button onClick={() => setActiveMode('multiple_choice')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'multiple_choice' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-               <Target className="w-5 h-5" /> Multiple Choice (Quiz)
+             <button onClick={() => setActiveMode('multiple_choice')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'multiple_choice' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+               <Target className="w-5 h-5 shrink-0" /> <span>Multiple Choice</span>
              </button>
            )}
-           <button onClick={() => setActiveMode('flashcards')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'flashcards' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-             <Layers className="w-5 h-5" /> Flashcards
+           <button onClick={() => setActiveMode('flashcards')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'flashcards' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+             <Layers className="w-5 h-5 shrink-0" /> <span>Flashcards</span>
            </button>
-           <button onClick={() => setActiveMode('podcast')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'podcast' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-             <Headphones className="w-5 h-5" /> Podcast
+           <button onClick={() => setActiveMode('podcast')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'podcast' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+             <Headphones className="w-5 h-5 shrink-0" /> <span>Podcast</span>
            </button>
            {blanksList.length > 0 && (
-             <button onClick={() => setActiveMode('fill_blanks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'fill_blanks' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-               <Type className="w-5 h-5" /> Fill-in-the-Blank
+             <button onClick={() => setActiveMode('fill_blanks')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'fill_blanks' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+               <Type className="w-5 h-5 shrink-0" /> <span>Fill-in-the-Blank</span>
              </button>
            )}
            {shortList.length > 0 && (
-             <button onClick={() => setActiveMode('written_test')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'written_test' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-               <BookOpen className="w-5 h-5" /> Written Test
+             <button onClick={() => setActiveMode('written_test')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'written_test' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+               <BookOpen className="w-5 h-5 shrink-0" /> <span>Written Test</span>
              </button>
            )}
            {flashcardSet?.tutor_lesson && (
-             <button onClick={() => setActiveMode('tutor_lesson')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'tutor_lesson' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-               <BrainCircuit className="w-5 h-5" /> Tutor Lesson
+             <button onClick={() => setActiveMode('tutor_lesson')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'tutor_lesson' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+               <BrainCircuit className="w-5 h-5 shrink-0" /> <span>Tutor Lesson</span>
              </button>
            )}
            {flashcardSet?.raw_content && (
-             <button onClick={() => setActiveMode('content')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeMode === 'content' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
-               <AlignLeft className="w-5 h-5" /> Content
+             <button onClick={() => setActiveMode('content')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-left ${activeMode === 'content' ? 'bg-brand-primary/10 text-brand-primary font-bold shadow-sm border border-brand-primary/20' : 'text-brand-muted hover:bg-black/5'}`}>
+               <AlignLeft className="w-5 h-5 shrink-0" /> <span>Content</span>
              </button>
            )}
          </div>
@@ -531,9 +531,9 @@ export default function StudyMode() {
                 <div className="w-full max-w-4xl flex flex-col gap-8">
                   {quizList.map((q, qIndex) => (
                     <div key={qIndex} className="glass-panel p-8 rounded-3xl border border-brand-border shadow-lg">
-                      <h2 className="text-xl md:text-2xl font-medium mb-6 text-brand-text flex items-start gap-3">
-                         <span className="text-brand-primary font-bold shrink-0">{qIndex + 1}.</span> 
-                         <span>{q.question}</span>
+                      <h2 className="text-xl md:text-2xl font-medium mb-6 text-brand-text flex items-start gap-4">
+                         <span className="w-10 h-10 rounded-xl bg-brand-primary/20 text-brand-primary flex items-center justify-center font-bold text-sm shrink-0 shadow-inner mt-0.5">Q{qIndex + 1}</span> 
+                         <span className="leading-relaxed mt-1">{q.question}</span>
                       </h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {q.options.map((opt, i) => {
@@ -556,9 +556,9 @@ export default function StudyMode() {
                                 }}
                                 className={`p-4 rounded-2xl border text-left transition-all ${classes}`}
                              >
-                               <div className="flex items-center gap-3">
-                                 <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center font-bold text-sm shrink-0">{String.fromCharCode(65+i)}</div>
-                                 <p className="font-medium flex-1 break-words">{opt}</p>
+                               <div className="flex items-start gap-4">
+                                 <div className="w-10 h-10 rounded-xl bg-black/10 flex items-center justify-center font-bold text-sm shrink-0 shadow-inner mt-0.5">{String.fromCharCode(65+i)}</div>
+                                 <p className="font-medium flex-1 break-words leading-relaxed mt-1">{opt}</p>
                                </div>
                              </button>
                            )

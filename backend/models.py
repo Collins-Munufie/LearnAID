@@ -9,6 +9,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    full_name = Column(String, nullable=True)
+    profile_picture = Column(String, nullable=True)
 
     flashcard_sets = relationship("FlashcardSet", back_populates="owner")
     stats = relationship("UserStats", back_populates="user", uselist=False)

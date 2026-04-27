@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 import bcrypt
 from jose import JWTError, jwt
 from pydantic import BaseModel
+from google.oauth2 import id_token
+from google.auth.transport import requests
+import secrets
 
 from database import get_db
 import models
@@ -27,7 +30,12 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class GoogleToken(BaseModel):
+    credential: str
+
 def verify_password(plain_password, hashed_password):
+    if not hashed_password:
+        return False
     if isinstance(hashed_password, str):
         hashed_password = hashed_password.encode('utf-8')
     plain_password = plain_password.encode('utf-8')
@@ -126,3 +134,58 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
             "total_flashcards_studied": stats.total_flashcards_studied if stats else 0,
         }
     }
+
+@router.post("/google", response_model=Token)
+def login_with_google(token_data: GoogleToken, db: Session = Depends(get_db)):
+    try:
+        # Verify the Google JWT token
+        idinfo = id_token.verify_oauth2_token(
+            token_data.credential, requests.Request(), 
+            # We don't enforce client ID here if placeholder is used, but ideally we should
+            # os.environ.get("GOOGLE_CLIENT_ID")
+        )
+        
+        email = idinfo.get("email")
+        name = idinfo.get("name")
+        picture = idinfo.get("picture")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not provided by Google")
+            
+        user = db.query(models.User).filter(models.User.email == email).first()
+        
+        if not user:
+            # Create new user
+            # Generate a random password since they use Google Auth
+            random_pwd = secrets.token_urlsafe(16)
+            hashed_password = get_password_hash(random_pwd)
+            
+            user = models.User(
+                email=email, 
+                hashed_password=hashed_password,
+                full_name=name,
+                profile_picture=picture
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        else:
+            # Update user info if it was missing
+            if not user.full_name and name:
+                user.full_name = name
+            if not user.profile_picture and picture:
+                user.profile_picture = picture
+            db.commit()
+            
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

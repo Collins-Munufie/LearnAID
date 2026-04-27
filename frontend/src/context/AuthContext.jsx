@@ -55,11 +55,18 @@ export const AuthProvider = ({ children }) => {
     await fetchUser();
   };
 
+  const loginWithGoogle = async (credential) => {
+    const response = await axios.post('http://127.0.0.1:8000/api/auth/google', { credential });
+    setToken(response.data.access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+    await fetchUser();
+  };
+
   const logout = () => {
     setToken(null);
   };
 
-  const value = { user, token, loading, login, register, logout, fetchUser };
+  const value = { user, token, loading, login, register, loginWithGoogle, logout, fetchUser };
 
   return (
     <AuthContext.Provider value={value}>
