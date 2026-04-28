@@ -11,6 +11,9 @@ from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import secrets
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from database import get_db
 import models
@@ -140,9 +143,10 @@ def login_with_google(token_data: GoogleToken, db: Session = Depends(get_db)):
     try:
         # Verify the Google JWT token
         idinfo = id_token.verify_oauth2_token(
-            token_data.credential, requests.Request(), 
-            # We don't enforce client ID here if placeholder is used, but ideally we should
-            # os.environ.get("GOOGLE_CLIENT_ID")
+            token_data.credential, 
+            requests.Request(), 
+            os.environ.get("GOOGLE_CLIENT_ID"),
+            clock_skew_in_seconds=60
         )
         
         email = idinfo.get("email")
@@ -183,9 +187,10 @@ def login_with_google(token_data: GoogleToken, db: Session = Depends(get_db)):
         )
         return {"access_token": access_token, "token_type": "bearer"}
         
-    except ValueError:
+    except ValueError as e:
+        print(f"Google Token Verification Failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Google token",
+            detail=f"Invalid Google token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
