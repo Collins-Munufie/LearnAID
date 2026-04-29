@@ -151,4 +151,4 @@ LearnAID utilizes a customized "quantum" and "brand" design system defined in `i
 
 ---
 
-*Built with ❤️ for accelerated learning.*
+*Built for accelerated learning.*
