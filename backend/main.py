@@ -80,20 +80,13 @@ from fastapi import Depends
 from typing import Optional
 
 async def read_file_safe(file: UploadFile, max_size: int = 10 * 1024 * 1024) -> bytes:
-    content_length = file.headers.get("content-length")
-    if content_length and int(content_length) > max_size:
-        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
-    
-    content = bytearray()
-    chunk_size = 8192
-    while True:
-        chunk = await file.read(chunk_size)
-        if not chunk:
-            break
-        content.extend(chunk)
-        if len(content) > max_size:
-            raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
-    return bytes(content)
+    # FastAPI's UploadFile uses SpooledTemporaryFile under the hood,
+    # which automatically handles buffering to disk for files larger than 1MB.
+    # We verify the size and return the bytes to maintain compatibility with downstream services.
+    content = await file.read()
+    if len(content) > max_size:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size exceeded.")
+    return content
 
 @app.post("/api/generate-flashcards")
 async def generate_flashcards_endpoint(

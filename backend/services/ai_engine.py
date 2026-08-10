@@ -721,7 +721,9 @@ def _ensure_requested_modules(data: dict, text: str, modules: list) -> dict:
     return data
 
 async def _execute_with_fallback(messages: list, temperature: float = 0.5):
-    """Executes a chat completion request across providers with fallback logic."""
+    """Executes a chat completion request across providers with fallback logic and retries."""
+    import asyncio
+    max_retries = 2
     for config in FALLBACK_CONFIGS:
         provider = config["provider"]
         model_name = config["model"]
@@ -729,20 +731,24 @@ async def _execute_with_fallback(messages: list, temperature: float = 0.5):
         if provider not in clients:
             continue
             
-        try:
-            client = clients[provider]
-            response = await asyncio.wait_for(
-                client.chat.completions.create(
-                    model=model_name,
-                    messages=messages,
-                    temperature=temperature
-                ),
-                timeout=AI_REQUEST_TIMEOUT_SECONDS,
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            logger.warning(f"Fallback warning: {provider} model {model_name} failed: {str(e)}")
-            continue
+        client = clients[provider]
+        for attempt in range(max_retries):
+            try:
+                response = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        model=model_name,
+                        messages=messages,
+                        temperature=temperature
+                    ),
+                    timeout=AI_REQUEST_TIMEOUT_SECONDS,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                logger.warning(f"Fallback warning: {provider} model {model_name} attempt {attempt+1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2 ** attempt) # Exponential backoff: 1s, 2s...
+                else:
+                    break
             
     raise Exception("All API providers failed.")
 
