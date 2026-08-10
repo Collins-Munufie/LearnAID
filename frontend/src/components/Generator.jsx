@@ -98,6 +98,46 @@ export default function Generator() {
     }
   };
 
+  const handleAudioUpload = async (file) => {
+    setIsGenerating(true);
+    setError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await api.post("/api/extract-audio", formData);
+      setExtractedData(response.data.extracted_text);
+      setSetTitle(response.data.title || "Live Lecture Transcription");
+      setPhase(2);
+    } catch (err) {
+      console.error("Extraction error:", err);
+      setError(getErrorMessage(err, "An error occurred while transcribing the audio."));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleOcrUpload = async (file) => {
+    setIsGenerating(true);
+    setError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await api.post("/api/extract-ocr", formData);
+      setExtractedData(response.data.extracted_text);
+      setSetTitle(response.data.title || "Handwritten Notes");
+      setPhase(2);
+    } catch (err) {
+      console.error("Extraction error:", err);
+      setError(getErrorMessage(err, "An error occurred while analyzing the image."));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const executeGeneration = async () => {
     if (selectedModules.length === 0) {
       setError("Please select at least one module.");
@@ -218,7 +258,7 @@ export default function Generator() {
         <AnimatePresence mode="wait">
           {phase === 1 && (
             <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} className="w-full flex flex-col items-center justify-center min-h-[50vh] gap-6">
-               <UploadSection onUploadFile={handleFileUpload} onUploadUrl={handleUrlSubmit} isGenerating={isGenerating} error={error} />
+               <UploadSection onUploadFile={handleFileUpload} onUploadUrl={handleUrlSubmit} onUploadAudio={handleAudioUpload} onUploadOcr={handleOcrUpload} isGenerating={isGenerating} error={error} />
                <button 
                   onClick={() => navigate('/dashboard')}
                   className="px-6 py-3 bg-brand-surface hover:bg-brand-surface/80 text-brand-text border border-brand-border rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 md:hover:scale-105 min-h-[44px] cursor-pointer"

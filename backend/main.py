@@ -7,6 +7,8 @@ from services.ai_engine import generate_flashcards
 from services.document_info_extractor import extract_document_info
 from services.web_scraper import extract_text_from_url
 from services.video_processor import extract_transcript
+from services.vision_extractor import extract_text_from_image
+from services.audio_extractor import extract_audio_transcript
 
 import models
 from database import engine, upgrade_db_schema
@@ -221,6 +223,35 @@ async def extract_url_endpoint(req: UrlRequest):
         if not extracted_text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text.")
         return {"extracted_text": extracted_text[:15000], "title": "Web/Video Content"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/extract-ocr")
+async def extract_ocr_endpoint(file: UploadFile = File(...)):
+    allowed_exts = (".png", ".jpg", ".jpeg", ".webp")
+    if not file.filename.lower().endswith(allowed_exts):
+        raise HTTPException(status_code=400, detail="Unsupported image format.")
+    content = await read_file_safe(file)
+    try:
+        extracted_text = extract_text_from_image(content)
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail="Could not extract text from image.")
+        return {"extracted_text": extracted_text[:15000], "title": "Handwritten Notes"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/extract-audio")
+async def extract_audio_endpoint(file: UploadFile = File(...)):
+    allowed_exts = (".webm", ".wav", ".mp3", ".m4a", ".ogg")
+    if not file.filename.lower().endswith(allowed_exts):
+        raise HTTPException(status_code=400, detail="Unsupported audio format.")
+    # Allow up to 25MB for audio
+    content = await read_file_safe(file, max_size=25 * 1024 * 1024)
+    try:
+        extracted_text = extract_audio_transcript(content, file.filename)
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail="Could not transcribe audio.")
+        return {"extracted_text": extracted_text[:15000], "title": "Live Lecture Transcription"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
