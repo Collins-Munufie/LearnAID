@@ -369,7 +369,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
         {isGenerating ? (
           <><Sparkles className="w-5 h-5" /> Generating Study Modes...</>
         ) : (
-          <><Sparkles className="w-5 h-5" /> Generate Study Modes</>
+          <>Generate Study Modes</>
         )}
       </motion.button>
     </motion.div>

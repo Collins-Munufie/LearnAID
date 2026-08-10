@@ -281,12 +281,7 @@ export default function Dashboard() {
             <Logo size="small" />
             
             <div className="flex items-center gap-4">
-               <button 
-                  onClick={() => navigate('/image-chat')}
-                  className="px-4 py-2.5 bg-brand-bg hover:bg-brand-surface text-brand-primary border border-brand-border rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm"
-               >
-                  <Sparkles className="w-4 h-4 text-brand-primary" /> Ask About Images
-               </button>
+
 
                <button 
                   onClick={() => setEditProfileOpen(true)}

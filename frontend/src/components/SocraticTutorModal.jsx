@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Loader2, Target, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../lib/api';
 
 export default function SocraticTutorModal({ isOpen, onClose, question, correctAnswer, contextText }) {
   const [messages, setMessages] = useState([]);
@@ -39,7 +39,7 @@ export default function SocraticTutorModal({ isOpen, onClose, question, correctA
     setIsTyping(true);
     
     try {
-      const response = await axios.post("/api/socratic-tutor", {
+      const response = await api.post("/api/socratic-tutor", {
          question: question,
          correct_answer: correctAnswer,
          messages: currentMessages,
@@ -67,54 +67,65 @@ export default function SocraticTutorModal({ isOpen, onClose, question, correctA
           className="bg-brand-bg border border-brand-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
         >
           {/* Header */}
-          <div className="flex bg-brand-surface p-4 border-b border-brand-border items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-primary/20 rounded-full flex items-center justify-center">
+          <div className="flex bg-brand-surface p-5 border-b border-brand-border items-center justify-between shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-brand-primary/20 to-purple-500/10 rounded-2xl flex items-center justify-center border border-brand-primary/20 shadow-inner">
                 <Bot className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-brand-text">Socratic AI Tutor</h3>
-                <p className="text-xs text-brand-muted">Guiding you to the answer</p>
+                <h3 className="text-lg font-bold text-brand-text tracking-tight">Socratic AI Tutor</h3>
+                <p className="text-[11px] text-brand-primary uppercase tracking-wider font-semibold">Guiding you to the answer</p>
               </div>
             </div>
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-brand-primary/10 rounded-full text-brand-muted hover:text-brand-primary transition-colors"
+              className="p-2.5 bg-brand-bg hover:bg-brand-primary/10 border border-brand-border rounded-xl text-brand-muted hover:text-brand-primary transition-all active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
           
           {/* Question Banner */}
-          <div className="bg-brand-primary/5 border-b border-brand-border p-4 text-sm flex gap-3">
-             <Target className="w-5 h-5 text-brand-primary shrink-0" />
+          <div className="bg-brand-primary/5 border-b border-brand-primary/10 p-4 text-sm flex items-start gap-3 shadow-inner">
+             <Target className="w-5 h-5 text-brand-primary shrink-0 mt-0.5" />
              <div className="text-brand-text font-medium leading-relaxed">
                {question}
              </div>
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-brand-bg">
-            {messages.map(msg => (
+          <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-brand-bg/50">
+            {messages.map((msg, idx) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
                 key={msg.id} 
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex w-full ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`px-4 py-3 max-w-[85%] rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                  msg.sender === 'user' 
-                    ? 'bg-brand-primary text-white rounded-br-sm' 
-                    : 'bg-brand-surface border border-brand-border text-brand-text rounded-bl-sm'
-                }`}>
-                  {msg.text}
+                <div className={`flex max-w-[85%] sm:max-w-[75%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} gap-3 items-end`}>
+                  {msg.sender === 'ai' && (
+                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center shrink-0 mb-1">
+                      <Bot className="w-4 h-4 text-brand-primary" />
+                    </div>
+                  )}
+                  <div className={`px-5 py-3.5 text-[15px] leading-relaxed shadow-sm ${
+                    msg.sender === 'user' 
+                      ? 'bg-brand-primary text-white rounded-2xl rounded-br-sm' 
+                      : 'bg-brand-surface border border-brand-border text-brand-text rounded-2xl rounded-bl-sm shadow-[0_4px_20px_rgba(0,0,0,0.05)]'
+                  }`}>
+                    {msg.text}
+                  </div>
                 </div>
               </motion.div>
             ))}
             {isTyping && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                 <div className="px-4 py-3 bg-brand-surface border border-brand-border rounded-2xl rounded-bl-sm flex items-center gap-2 text-brand-primary">
-                    <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-xs font-medium">Analyzing your logic...</span>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start items-end gap-3 w-full">
+                 <div className="w-8 h-8 rounded-full bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center shrink-0 mb-1">
+                   <Bot className="w-4 h-4 text-brand-primary" />
+                 </div>
+                 <div className="px-5 py-3.5 bg-brand-surface border border-brand-border rounded-2xl rounded-bl-sm flex items-center gap-3 text-brand-primary shadow-sm">
+                    <Loader2 className="w-5 h-5 animate-spin" /> <span className="text-sm font-medium">Analyzing your logic...</span>
                  </div>
               </motion.div>
             )}
@@ -122,26 +133,26 @@ export default function SocraticTutorModal({ isOpen, onClose, question, correctA
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-brand-border bg-brand-surface">
-            <div className="flex items-center gap-2 mb-2 px-1 opacity-70">
-              <Info className="w-3.5 h-3.5 text-brand-muted" />
-              <span className="text-xs text-brand-muted">The AI won't give you the exact answer directly.</span>
+          <div className="p-4 sm:p-5 border-t border-brand-border bg-brand-surface shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center gap-2 mb-3 px-2">
+              <Info className="w-3.5 h-3.5 text-brand-primary/80" />
+              <span className="text-xs font-medium text-brand-muted">The AI won't give you the exact answer directly.</span>
             </div>
-            <div className="relative flex items-center">
+            <div className="relative flex items-center group">
               <input 
                 type="text" 
                 placeholder="Type your thoughts here..." 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                className="w-full bg-brand-bg border border-brand-border rounded-xl pl-4 pr-12 py-3 text-sm focus:border-brand-primary outline-none transition-all text-brand-text placeholder-brand-muted/50"
+                className="w-full bg-brand-bg border-2 border-brand-border rounded-2xl pl-5 pr-14 py-4 text-[15px] focus:border-brand-primary outline-none transition-all text-brand-text placeholder-brand-muted/50 group-hover:border-brand-border/80"
               />
               <button 
                 onClick={handleSend}
                 disabled={!input.trim() || isTyping}
-                className="absolute right-2 p-2 text-brand-primary hover:bg-brand-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                className="absolute right-2 p-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-brand-primary active:scale-95 shadow-md flex items-center justify-center"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5 ml-0.5" />
               </button>
             </div>
           </div>

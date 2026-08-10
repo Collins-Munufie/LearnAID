@@ -431,12 +431,12 @@ export default function ImageChat() {
                       onChange={handleFileChange} 
                       className="hidden" 
                     />
-                    <div className="p-3 bg-brand-bg border border-brand-border rounded-xl text-brand-muted group-hover:text-brand-primary group-hover:border-brand-primary/20 transition-all flex items-center justify-center shadow-inner">
-                      <Upload className="w-5 h-5 group-hover:scale-115 transition-all duration-300" />
+                    <div className="p-4 bg-brand-primary/10 border border-brand-primary/20 rounded-2xl text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-all flex items-center justify-center shadow-inner">
+                      <Upload className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <div className="text-center">
-                      <span className="font-extrabold text-brand-text text-xs block">Choose or drop files</span>
-                      <span className="text-[9px] text-brand-muted block mt-0.5">PNG, JPG, WEBP (Multiple allowed)</span>
+                    <div className="text-center mt-2">
+                      <span className="font-bold text-brand-text text-sm block">Click to upload or drag and drop</span>
+                      <span className="text-[11px] text-brand-muted block mt-1">Supports JPG, PNG, WEBP (Multiple allowed)</span>
                     </div>
                   </div>
                 </div>
@@ -470,8 +470,8 @@ export default function ImageChat() {
                     rows={4}
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Type what you'd like to understand about the uploaded visual material..."
-                    className="w-full p-4 rounded-xl border border-brand-border bg-brand-surface text-brand-text text-sm focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 transition-all resize-none custom-scrollbar shadow-inner"
+                    placeholder="E.g., What does this diagram represent? or Solve this equation..."
+                    className="w-full p-5 rounded-2xl border-2 border-brand-border bg-brand-bg text-brand-text text-sm focus:outline-none focus:border-brand-primary transition-all resize-none shadow-inner placeholder-brand-muted/50"
                   ></textarea>
 
                   {/* Quick prompts */}
@@ -649,31 +649,24 @@ export default function ImageChat() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center gap-1 bg-brand-bg/85 p-1 border border-brand-border rounded-xl">
-                  <button
-                    onClick={() => setActiveTab('report')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      activeTab === 'report'
-                        ? 'bg-brand-surface text-brand-primary border border-brand-border shadow-xs'
-                        : 'text-brand-muted hover:text-brand-text border border-transparent'
-                    }`}
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Study Report</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setActiveTab('chat')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      activeTab === 'chat'
-                        ? 'bg-brand-surface text-brand-primary border border-brand-border shadow-xs'
-                        : 'text-brand-muted hover:text-brand-text border border-transparent'
-                    }`}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Chat History</span>
-                  </button>
-                </div>
+                <div className="flex bg-brand-bg border border-brand-border rounded-2xl p-1 mb-5">
+                    <button
+                      onClick={() => setActiveTab('report')}
+                      className={`flex-1 py-2.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${
+                        activeTab === 'report' ? 'bg-brand-primary text-white shadow-md' : 'text-brand-muted hover:text-brand-text'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" /> Study Report
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('chat')}
+                      className={`flex-1 py-2.5 sm:py-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${
+                        activeTab === 'chat' ? 'bg-brand-primary text-white shadow-md' : 'text-brand-muted hover:text-brand-text'
+                      }`}
+                    >
+                      <MessageSquare className="w-4 h-4" /> AI Chat
+                    </button>
+                  </div>
 
                 {/* Export Button */}
                 {getLatestAIMessage() && (
