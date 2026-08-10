@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Check, X, RotateCcw, BrainCircuit, Play, Layers, CheckCircle2, Type, ArrowRight, Target, AlignLeft, BookOpen, Headphones, PlayCircle, PauseCircle, StopCircle, Hash, FileText, Award } from 'lucide-react';
+import { ChevronLeft, Check, X, RotateCcw, BrainCircuit, Play, Layers, CheckCircle2, Type, ArrowRight, Target, AlignLeft, BookOpen, Headphones, PlayCircle, PauseCircle, StopCircle, Hash, FileText, Award, Bot } from 'lucide-react';
 import api, { getErrorMessage } from '../lib/api';
 import StudyChat from './StudyChat';
 import MockExam from './MockExam';
+import SocraticTutorModal from './SocraticTutorModal';
 import { useAuth } from '../context/AuthContext';
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
@@ -28,6 +29,11 @@ export default function StudyMode() {
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [podcastVoice, setPodcastVoice] = useState('Conversational Mode');
   const [chatQuery, setChatQuery] = useState('');
+
+  // Socratic Tutor State
+  const [isTutorOpen, setIsTutorOpen] = useState(false);
+  const [tutorQuestion, setTutorQuestion] = useState('');
+  const [tutorAnswer, setTutorAnswer] = useState('');
 
   const { fetchUser } = useAuth(); // AuthContext to refresh stats
 
@@ -691,6 +697,16 @@ export default function StudyMode() {
                           >
                             <X className="w-5 h-5" /> Needs Review
                           </button>
+                          <button
+                            onClick={() => {
+                              setTutorQuestion(cards[currentIndex].question);
+                              setTutorAnswer(cards[currentIndex].answer);
+                              setIsTutorOpen(true);
+                            }}
+                            className="flex-1 py-4 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+                          >
+                            <Bot className="w-5 h-5" /> Tutor Me
+                          </button>
                           <button 
                             onClick={() => handleProgress(true)}
                             className="flex-1 py-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-500 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
@@ -743,6 +759,21 @@ export default function StudyMode() {
                            )
                         })}
                       </div>
+
+                      {quizSubmitted && quizAnswers[qIndex] !== q.correct_answer && (
+                        <div className="mt-6 flex justify-end">
+                           <button
+                             onClick={() => {
+                               setTutorQuestion(q.question);
+                               setTutorAnswer(q.correct_answer);
+                               setIsTutorOpen(true);
+                             }}
+                             className="px-4 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 min-h-[44px]"
+                           >
+                             <Bot className="w-4 h-4" /> Get AI Help
+                           </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   
@@ -1345,6 +1376,13 @@ export default function StudyMode() {
         </button>
       </div>
 
+      <SocraticTutorModal 
+        isOpen={isTutorOpen} 
+        onClose={() => setIsTutorOpen(false)} 
+        question={tutorQuestion} 
+        correctAnswer={tutorAnswer} 
+        contextText={flashcardSet?.raw_content} 
+      />
     </div>
   );
 }
