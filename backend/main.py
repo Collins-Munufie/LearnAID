@@ -282,13 +282,8 @@ class SocraticTutorRequest(BaseModel):
 async def socratic_tutor_endpoint(req: SocraticTutorRequest):
     try:
         from services.socratic_tutor import socratic_chat
-        response_text = await asyncio.wait_for(
-            socratic_chat(req.question, req.correct_answer, req.messages, req.context_text),
-            timeout=GENERATION_TIMEOUT
-        )
+        response_text = await socratic_chat(req.question, req.correct_answer, req.messages, req.context_text)
         return {"response": response_text}
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="AI response timed out. Please try again.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
