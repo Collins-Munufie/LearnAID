@@ -34,6 +34,8 @@ def clean_database_url(url: str) -> str:
 # Get the database URL from the environment
 DATABASE_URL = clean_database_url(os.getenv("DATABASE_URL"))
 
+from sqlalchemy import event
+
 # If no DATABASE_URL is provided, fallback to local SQLite for development
 if not DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = "sqlite:///./flashcards.db"
@@ -41,6 +43,14 @@ if not DATABASE_URL:
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False, "timeout": 30}
     )
+    
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
 else:
     # SQLAlchemy 1.4+ requires "postgresql://" instead of "postgres://"
     if DATABASE_URL.startswith("postgres://"):
@@ -91,7 +101,7 @@ def upgrade_db_schema(engine):
 
     # Check and add columns to flashcards table
     flashcard_columns_to_add = [
-        ("due", "DATETIME DEFAULT CURRENT_TIMESTAMP"),
+        ("due", "DATETIME DEFAULT NULL"),
         ("stability", "FLOAT DEFAULT 0.0"),
         ("difficulty", "FLOAT DEFAULT 0.0"),
         ("elapsed_days", "INTEGER DEFAULT 0"),

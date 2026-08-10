@@ -8,13 +8,13 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    visualizer({
+    /* visualizer({
       filename: 'stats.html',
       title: 'Cognify Bundle Analysis',
       gzipSize: true,
       brotliSize: true,
       open: false // Do not automatically open browser on every build
-    })
+    }) */
   ],
   css: {
     postcss: {} // Prevents picking up parent directory postcss/tailwindcss v3 config

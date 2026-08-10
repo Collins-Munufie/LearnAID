@@ -499,87 +499,100 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-               {filteredSets.map(set => (
-                  <motion.div 
-                     layout
-                     initial={{ opacity: 0, scale: 0.9 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     whileHover={{ y: -5 }}
-                     key={set.id} 
-                     className="glass-panel p-6 rounded-2xl border border-brand-border flex flex-col h-full hover:shadow-[0_10px_30px_rgba(139,92,246,0.1)] transition-all relative group"
-                  >
-                      <div className="absolute top-4 right-4 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-20">
-                         {deleteConfirmId === set.id ? (
-                            <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 rounded-2xl px-3 py-1.5 backdrop-blur-xl shadow-lg animate-pulse">
-                               <span className="text-[10px] font-black text-red-500 tracking-wider uppercase px-1">Delete?</span>
-                               <button 
-                                  onClick={() => handleDeleteSet(set.id)} 
-                                  className="p-1 text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors cursor-pointer"
-                                  title="Yes, Delete"
-                               >
-                                  <Check className="w-3 h-3 stroke-[3]" />
-                               </button>
-                               <button 
-                                  onClick={() => setDeleteConfirmId(null)} 
-                                  className="p-1 text-brand-muted hover:text-brand-text bg-brand-surface border border-brand-border rounded-md transition-colors cursor-pointer"
-                                  title="Cancel"
-                               >
-                                  <X className="w-3 h-3" />
-                               </button>
-                            </div>
-                         ) : (
-                            <>
-                               <button 
-                                  onClick={() => setRenameModal({ open: true, id: set.id, title: set.title })} 
-                                  className="p-2 bg-brand-surface rounded-xl text-brand-muted hover:text-brand-primary hover:border-brand-primary/30 border border-brand-border/40 transition-all shadow-sm cursor-pointer md:hover:scale-105 active:scale-95 min-w-[32px] min-h-[32px] flex items-center justify-center" 
-                                  title="Rename Set"
-                               >
-                                  <Edit2 className="w-3.5 h-3.5"/>
-                               </button>
-                               <button 
-                                  onClick={() => setDeleteConfirmId(set.id)} 
-                                  className="p-2 bg-brand-surface rounded-xl text-brand-muted hover:bg-red-500 hover:text-white hover:border-red-500/30 border border-brand-border/40 transition-all shadow-sm cursor-pointer md:hover:scale-105 active:scale-95 min-w-[32px] min-h-[32px] flex items-center justify-center" 
-                                  title="Delete Set"
-                               >
-                                  <Trash2 className="w-3.5 h-3.5"/>
-                               </button>
-                            </>
-                         )}
-                      </div>
+               {filteredSets.length === 0 ? (
+                  <div className="col-span-full glass-panel p-10 rounded-3xl border border-dashed border-brand-border text-center flex flex-col items-center justify-center min-h-[250px]">
+                     <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mb-4">
+                        <Layers className="w-8 h-8 text-brand-primary" />
+                     </div>
+                     <h3 className="text-xl font-bold mb-2">No Study Material Found</h3>
+                     <p className="text-brand-muted mb-6 text-sm">You haven't created any study sets yet, or none match your search.</p>
+                     <button onClick={() => navigate('/generate')} className="px-6 py-3 bg-brand-primary text-white rounded-xl font-bold transition-transform shadow-md md:hover:scale-105 active:scale-95">
+                        Create Your First Set
+                     </button>
+                  </div>
+               ) : (
+                  filteredSets.map(set => (
+                     <motion.div 
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ y: -5 }}
+                        key={set.id} 
+                        className="glass-panel p-6 rounded-2xl border border-brand-border flex flex-col h-full hover:shadow-[0_10px_30px_rgba(139,92,246,0.1)] transition-all relative group"
+                     >
+                         <div className="absolute top-4 right-4 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-20">
+                            {deleteConfirmId === set.id ? (
+                               <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/30 rounded-2xl px-3 py-1.5 backdrop-blur-xl shadow-lg animate-pulse">
+                                  <span className="text-[10px] font-black text-red-500 tracking-wider uppercase px-1">Delete?</span>
+                                  <button 
+                                     onClick={() => handleDeleteSet(set.id)} 
+                                     className="p-1 text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors cursor-pointer"
+                                     title="Yes, Delete"
+                                  >
+                                     <Check className="w-3 h-3 stroke-[3]" />
+                                  </button>
+                                  <button 
+                                     onClick={() => setDeleteConfirmId(null)} 
+                                     className="p-1 text-brand-muted hover:text-brand-text bg-brand-surface border border-brand-border rounded-md transition-colors cursor-pointer"
+                                     title="Cancel"
+                                  >
+                                     <X className="w-3 h-3" />
+                                  </button>
+                               </div>
+                            ) : (
+                               <>
+                                  <button 
+                                     onClick={() => setRenameModal({ open: true, id: set.id, title: set.title })} 
+                                     className="p-2 bg-brand-surface rounded-xl text-brand-muted hover:text-brand-primary hover:border-brand-primary/30 border border-brand-border/40 transition-all shadow-sm cursor-pointer md:hover:scale-105 active:scale-95 min-w-[32px] min-h-[32px] flex items-center justify-center" 
+                                     title="Rename Set"
+                                  >
+                                     <Edit2 className="w-3.5 h-3.5"/>
+                                  </button>
+                                  <button 
+                                     onClick={() => setDeleteConfirmId(set.id)} 
+                                     className="p-2 bg-brand-surface rounded-xl text-brand-muted hover:bg-red-500 hover:text-white hover:border-red-500/30 border border-brand-border/40 transition-all shadow-sm cursor-pointer md:hover:scale-105 active:scale-95 min-w-[32px] min-h-[32px] flex items-center justify-center" 
+                                     title="Delete Set"
+                                  >
+                                     <Trash2 className="w-3.5 h-3.5"/>
+                                  </button>
+                               </>
+                            )}
+                         </div>
 
-                     <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2.5 py-1 bg-brand-surface rounded-md border border-brand-border text-[10px] font-bold uppercase tracking-wider text-brand-muted"><Clock className="w-3 h-3 inline mr-1"/> {new Date(set.unixTime).toLocaleDateString()}</span>
-                     </div>
-                     
-                     <div className="flex flex-wrap gap-1.5 mb-4">
-                        {set.generatedModes.slice(0, 4).map(mode => (
-                           <span key={mode} className="px-2 py-0.5 bg-brand-primary/10 rounded border border-brand-primary/20 text-[9px] font-bold uppercase tracking-wider text-brand-primary">{mode}</span>
-                        ))}
-                        {set.generatedModes.length > 4 && (
-                           <span className="px-2 py-0.5 bg-brand-primary/10 rounded border border-brand-primary/20 text-[9px] font-bold uppercase tracking-wider text-brand-primary">+{set.generatedModes.length - 4}</span>
-                        )}
-                     </div>
+                        <div className="flex items-center gap-2 mb-3">
+                           <span className="px-2.5 py-1 bg-brand-surface rounded-md border border-brand-border text-[10px] font-bold uppercase tracking-wider text-brand-muted"><Clock className="w-3 h-3 inline mr-1"/> {new Date(set.unixTime).toLocaleDateString()}</span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                           {set.generatedModes.slice(0, 4).map(mode => (
+                              <span key={mode} className="px-2 py-0.5 bg-brand-primary/10 rounded border border-brand-primary/20 text-[9px] font-bold uppercase tracking-wider text-brand-primary">{mode}</span>
+                           ))}
+                           {set.generatedModes.length > 4 && (
+                              <span className="px-2 py-0.5 bg-brand-primary/10 rounded border border-brand-primary/20 text-[9px] font-bold uppercase tracking-wider text-brand-primary">+{set.generatedModes.length - 4}</span>
+                           )}
+                        </div>
 
-                     <h3 className="text-xl font-bold mb-4 line-clamp-2 text-brand-text pr-8">{set.title}</h3>
-                     
-                     <div className="flex justify-between text-sm mb-2 text-brand-muted font-medium mt-auto">
-                        <span>Mastery Progress</span>
-                        <span className={set.progressPercent === 100 ? 'text-green-500' : ''}>{set.progressPercent}%</span>
-                     </div>
-                     <div className="w-full h-1.5 bg-brand-bg rounded-full overflow-hidden mb-6 border border-brand-border">
-                       <div className="h-full bg-brand-primary" style={{ width: `${set.progressPercent}%` }}></div>
-                     </div>
+                        <h3 className="text-xl font-bold mb-4 line-clamp-2 text-brand-text pr-8">{set.title}</h3>
+                        
+                        <div className="flex justify-between text-sm mb-2 text-brand-muted font-medium mt-auto">
+                           <span>Mastery Progress</span>
+                           <span className={set.progressPercent === 100 ? 'text-green-500' : ''}>{set.progressPercent}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-brand-bg rounded-full overflow-hidden mb-6 border border-brand-border">
+                          <div className="h-full bg-brand-primary" style={{ width: `${set.progressPercent}%` }}></div>
+                        </div>
 
-                      <div className="flex gap-3 mt-auto">
-                        <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-surface md:hover:bg-brand-primary/10 active:bg-brand-primary/20 text-brand-text border border-brand-border rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold active:scale-95 min-h-[44px]">
-                          Review
-                        </button>
-                        <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 min-h-[44px]">
-                          <Play className="w-4 h-4" /> Continue
-                        </button>
-                      </div>
-                  </motion.div>
-               ))}
+                         <div className="flex gap-3 mt-auto">
+                           <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-surface md:hover:bg-brand-primary/10 active:bg-brand-primary/20 text-brand-text border border-brand-border rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold active:scale-95 min-h-[44px]">
+                             Review
+                           </button>
+                           <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 min-h-[44px]">
+                             <Play className="w-4 h-4" /> Continue
+                           </button>
+                         </div>
+                     </motion.div>
+                  ))
+               )}
             </div>
 
           {/* 5. STRUCTURAL ACCURACIES */}

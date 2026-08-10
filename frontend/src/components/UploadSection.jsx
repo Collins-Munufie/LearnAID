@@ -171,7 +171,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
       className="w-full max-w-2xl flex flex-col gap-6"
     >
       {/* Tabs */}
-      <div className="flex flex-nowrap justify-between bg-brand-surface p-1 rounded-2xl border border-brand-border w-full sm:w-fit mx-auto overflow-hidden gap-1">
+      <div className="flex flex-nowrap justify-start sm:justify-between bg-brand-surface p-1 rounded-2xl border border-brand-border w-full sm:w-fit mx-auto overflow-x-auto hide-scrollbar max-w-full gap-1 snap-x snap-mandatory">
         {[
           { id: 'pdf', label: 'Document', icon: <FileText className="w-4 h-4 mr-2 hidden sm:block" /> },
           { id: 'url', label: 'Link', icon: <LinkIcon className="w-4 h-4 mr-2 hidden sm:block" /> },

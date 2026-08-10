@@ -43,6 +43,17 @@ api.interceptors.response.use(
     const config = error.config;
     const method = config?.method?.toUpperCase();
     const canRetry = method === 'GET' || method === 'HEAD';
+    // Handle 401 Unauthorized explicitly
+    if (error.response && error.response.status === 401) {
+        // Do not redirect if the error is from the login endpoint itself
+        if (config.url && !config.url.includes('/api/auth/login')) {
+            localStorage.removeItem('token');
+            if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+                 window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
 
     if (!config || !canRetry || config.__retryCount >= 2) {
       return Promise.reject(error);
