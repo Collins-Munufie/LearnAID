@@ -171,7 +171,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
       className="w-full max-w-2xl flex flex-col gap-6"
     >
       {/* Tabs */}
-      <div className="flex flex-wrap sm:flex-nowrap justify-center bg-brand-surface p-1 rounded-2xl border border-brand-border w-full sm:w-fit mx-auto overflow-hidden">
+      <div className="flex flex-nowrap justify-between bg-brand-surface p-1 rounded-2xl border border-brand-border w-full sm:w-fit mx-auto overflow-hidden gap-1">
         {[
           { id: 'pdf', label: 'Document', icon: <FileText className="w-4 h-4 mr-2 hidden sm:block" /> },
           { id: 'url', label: 'Link', icon: <LinkIcon className="w-4 h-4 mr-2 hidden sm:block" /> },
@@ -181,7 +181,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center whitespace-nowrap px-4 sm:px-6 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex flex-1 sm:flex-none items-center justify-center whitespace-nowrap px-1 xs:px-2 sm:px-6 py-2.5 rounded-xl text-[11px] xs:text-xs sm:text-sm font-medium transition-all ${
               activeTab === tab.id ? 'bg-brand-primary text-white shadow-lg' : 'text-brand-muted hover:bg-brand-border/50 hover:text-brand-text'
             }`}
           >
