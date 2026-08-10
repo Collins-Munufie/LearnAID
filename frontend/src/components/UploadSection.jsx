@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, FileText, X, Sparkles, Loader2, AlertCircle, Link as LinkIcon, Mic, Camera, Image as ImageIcon, Square, Play } from 'lucide-react';
+import { UploadCloud, FileText, X, Sparkles, Loader2, AlertCircle, Link as LinkIcon, Mic, Camera, Image as ImageIcon, Square, Play, Pause } from 'lucide-react';
 
 export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio, onUploadOcr, isGenerating, error }) {
   const [activeTab, setActiveTab] = useState('pdf'); // 'pdf', 'url', 'audio', 'ocr'
@@ -14,6 +14,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
   
   // Audio Recording States
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef(null);
@@ -92,9 +93,9 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
         stream.getTracks().forEach(track => track.stop());
         clearInterval(timerIntervalRef.current);
       };
-      
       mediaRecorder.start();
       setIsRecording(true);
+      setIsPaused(false);
       setAudioBlob(null);
       setRecordingTime(0);
       
@@ -112,6 +113,25 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      setIsPaused(false);
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && isRecording && isPaused) {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      timerIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
     }
   };
   
@@ -151,7 +171,7 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
       className="w-full max-w-2xl flex flex-col gap-6"
     >
       {/* Tabs */}
-      <div className="flex bg-brand-surface p-1 rounded-2xl border border-brand-border w-fit mx-auto overflow-x-auto max-w-full no-scrollbar">
+      <div className="flex flex-wrap sm:flex-nowrap justify-center bg-brand-surface p-1 rounded-2xl border border-brand-border w-full sm:w-fit mx-auto overflow-hidden">
         {[
           { id: 'pdf', label: 'Document', icon: <FileText className="w-4 h-4 mr-2 hidden sm:block" /> },
           { id: 'url', label: 'Link', icon: <LinkIcon className="w-4 h-4 mr-2 hidden sm:block" /> },
@@ -240,16 +260,27 @@ export default function UploadSection({ onUploadFile, onUploadUrl, onUploadAudio
               className="w-full flex justify-center py-6"
             >
               <div className="w-full max-w-lg flex flex-col items-center text-center">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg transition-all ${isRecording ? 'bg-red-500/20 border-2 border-red-500 animate-pulse' : 'bg-brand-surface border border-brand-border'}`}>
-                  <Mic className={`w-10 h-10 ${isRecording ? 'text-red-500' : 'text-brand-primary'}`} />
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg transition-all ${isRecording && !isPaused ? 'bg-red-500/20 border-2 border-red-500 animate-pulse' : 'bg-brand-surface border border-brand-border'}`}>
+                  <Mic className={`w-10 h-10 ${isRecording && !isPaused ? 'text-red-500' : 'text-brand-primary'}`} />
                 </div>
-                <h3 className="text-xl font-medium mb-2">{isRecording ? "Recording Live Lecture..." : "Record Live Lecture"}</h3>
-                <p className="text-brand-muted mb-8 text-sm">{isRecording ? formatTime(recordingTime) : "Tap to transcribe speech into study notes instantly."}</p>
+                <h3 className="text-xl font-medium mb-2">{isRecording ? (isPaused ? "Recording Paused" : "Recording Live Lecture...") : "Record Live Lecture"}</h3>
+                <p className="text-brand-muted mb-8 text-sm">{(isRecording || audioBlob) ? formatTime(recordingTime) : "Tap to transcribe speech into study notes instantly."}</p>
                 
                 {isRecording ? (
-                  <button onClick={stopRecording} className="px-8 py-3 rounded-full bg-red-500 text-white font-bold flex items-center gap-2 hover:bg-red-600 transition-all">
-                    <Square className="w-4 h-4 fill-current" /> Stop Recording
-                  </button>
+                  <div className="flex gap-4">
+                    {isPaused ? (
+                      <button onClick={resumeRecording} className="px-6 py-3 rounded-full bg-brand-primary text-white font-bold flex items-center gap-2 hover:bg-brand-primary-hover transition-all">
+                        <Play className="w-4 h-4 fill-current" /> Resume
+                      </button>
+                    ) : (
+                      <button onClick={pauseRecording} className="px-6 py-3 rounded-full bg-yellow-500 text-white font-bold flex items-center gap-2 hover:bg-yellow-600 transition-all">
+                        <Pause className="w-4 h-4 fill-current" /> Pause
+                      </button>
+                    )}
+                    <button onClick={stopRecording} className="px-6 py-3 rounded-full bg-red-500 text-white font-bold flex items-center gap-2 hover:bg-red-600 transition-all">
+                      <Square className="w-4 h-4 fill-current" /> Finish
+                    </button>
+                  </div>
                 ) : audioBlob ? (
                   <div className="flex flex-col items-center gap-4">
                     <div className="px-4 py-2 bg-green-500/20 text-green-400 rounded-xl font-medium text-sm flex items-center gap-2">
