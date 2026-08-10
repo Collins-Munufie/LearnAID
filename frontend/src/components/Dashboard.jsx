@@ -8,6 +8,7 @@ import ProfileDrawer from './ProfileDrawer';
 import api, { getErrorMessage } from '../lib/api';
 
 const WeeklyActivityChart = lazy(() => import('./WeeklyActivityChart'));
+const MemoryAnalytics = lazy(() => import('./MemoryAnalytics'));
 
 export default function Dashboard() {
   const { user, fetchUser, logout, loading: authLoading } = useAuth();
@@ -442,6 +443,13 @@ export default function Dashboard() {
                    <button onClick={() => navigate('/generate')} className="px-8 py-4 bg-brand-primary text-white rounded-xl font-bold md:hover:scale-105 active:scale-95 transition-all duration-75 shadow-[0_0_20px_rgba(139,92,246,0.3)] min-h-[48px]">Create New Study Set</button>
                 </div>
              )}
+          </div>
+
+          {/* MEMORY ANALYTICS */}
+          <div className="mb-14">
+            <Suspense fallback={<div className="h-64 w-full bg-brand-surface animate-pulse border border-brand-border rounded-3xl" />}>
+               <MemoryAnalytics />
+            </Suspense>
           </div>
 
           {/* 4. ACTIVITY TRACKER */}

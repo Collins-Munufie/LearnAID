@@ -157,33 +157,33 @@ export default function StudyMode() {
     }
   }, [activeMode, cards]);
 
-  const handleProgress = async (success) => {
+  const handleFSRSReview = async (rating) => {
     const currentCard = cards[currentIndex];
-    const currentLevel = masteryLevels[currentCard.id] || 0;
-    
-    let nextLevel = currentLevel;
-    if (success) {
-      nextLevel = Math.min(3, currentLevel + 1);
-    } else {
-      nextLevel = 0; 
-    }
-
-    setMasteryLevels(prev => ({
-        ...prev,
-        [currentCard.id]: nextLevel
-    }));
 
     try {
-      await api.put(`/api/flashcard-sets/flashcards/${currentCard.id}/mastery`, {
-        mastery_level: nextLevel
+      const res = await api.post(`/api/flashcards/${currentCard.id}/review`, {
+        rating: rating
       });
-      // Increment real-time studied cards tracker
+      
+      setCards(prevCards => {
+        const newCards = [...prevCards];
+        newCards[currentIndex] = { ...currentCard, ...res.data };
+        return newCards;
+      });
+
+      // Also update masteryLevel visually for backward compatibility or simple UI colors
+      const newLevel = rating === 1 ? 0 : (rating === 2 ? 1 : (rating === 3 ? 2 : 3));
+      setMasteryLevels(prev => ({
+        ...prev,
+        [currentCard.id]: newLevel
+      }));
+
       await api.put('/api/user-stats/studied');
       if (fetchUser) {
         fetchUser().catch(err => console.warn('Failed to refresh user after progress:', err));
       }
     } catch (err) {
-      console.warn('Failed to persist card progress:', err);
+      console.warn('Failed to persist FSRS progress:', err);
     }
 
     if (currentIndex + 1 < cards.length) {
@@ -683,35 +683,49 @@ export default function StudyMode() {
                     </motion.div>
                   </div>
                   
-                  <motion.div className="flex gap-4 mt-8 w-full h-16 relative justify-center max-w-3xl">
+                  <motion.div className="flex gap-2 sm:gap-4 mt-8 w-full h-16 relative justify-center max-w-3xl px-2">
                     <AnimatePresence>
                       {isFlipped && (
                         <motion.div 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="w-full flex gap-4 absolute inset-0"
+                          className="w-full flex gap-2 sm:gap-4 absolute inset-0 justify-center"
                         >
                           <button 
-                            onClick={() => handleProgress(false)}
-                            className="flex-1 py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+                            onClick={() => handleFSRSReview(1)}
+                            className="flex-1 py-2 sm:py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-500 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-95 text-[11px] sm:text-sm"
                           >
-                            <X className="w-5 h-5" /> Needs Review
+                            <span className="block">Again</span><span className="text-[10px] opacity-70 font-normal">&lt;10m</span>
                           </button>
+                          <button 
+                            onClick={() => handleFSRSReview(2)}
+                            className="flex-1 py-2 sm:py-4 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-95 text-[11px] sm:text-sm"
+                          >
+                            <span className="block">Hard</span><span className="text-[10px] opacity-70 font-normal">1d</span>
+                          </button>
+                          <button 
+                            onClick={() => handleFSRSReview(3)}
+                            className="flex-1 py-2 sm:py-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-500 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-95 text-[11px] sm:text-sm"
+                          >
+                            <span className="block">Good</span><span className="text-[10px] opacity-70 font-normal">3d</span>
+                          </button>
+                          <button 
+                            onClick={() => handleFSRSReview(4)}
+                            className="flex-1 py-2 sm:py-4 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-500 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-95 text-[11px] sm:text-sm"
+                          >
+                            <span className="block">Easy</span><span className="text-[10px] opacity-70 font-normal">5d</span>
+                          </button>
+                          
                           <button
                             onClick={() => {
                               setTutorQuestion(cards[currentIndex].question);
                               setTutorAnswer(cards[currentIndex].answer);
                               setIsTutorOpen(true);
                             }}
-                            className="flex-1 py-4 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
+                            className="w-12 h-auto py-2 sm:py-4 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary rounded-2xl font-bold flex flex-col items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-95 text-xs sm:text-sm shrink-0"
+                            title="Tutor Me"
                           >
-                            <Bot className="w-5 h-5" /> Tutor Me
-                          </button>
-                          <button 
-                            onClick={() => handleProgress(true)}
-                            className="flex-1 py-4 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-500 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95"
-                          >
-                            <Check className="w-5 h-5" /> Got It
+                            <Bot className="w-5 h-5" />
                           </button>
                         </motion.div>
                       )}

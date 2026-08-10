@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean, Float
 from sqlalchemy.orm import relationship
 import datetime
 from database import Base
@@ -76,8 +76,19 @@ class Flashcard(Base):
     id = Column(Integer, primary_key=True, index=True)
     question = Column(String)
     answer = Column(String)
-    mastery_level = Column(Integer, default=0) # 0:Unfamiliar, 1:Learning, 2:Familiar, 3:Mastered
+    mastery_level = Column(Integer, default=0) # Legacy
     set_id = Column(Integer, ForeignKey("flashcard_sets.id", ondelete="CASCADE"), index=True)
+
+    # FSRS Data
+    due = Column(DateTime, default=datetime.datetime.utcnow)
+    stability = Column(Float, default=0.0)
+    difficulty = Column(Float, default=0.0)
+    elapsed_days = Column(Integer, default=0)
+    scheduled_days = Column(Integer, default=0)
+    reps = Column(Integer, default=0)
+    lapses = Column(Integer, default=0)
+    state = Column(Integer, default=0) # 0: New, 1: Learning, 2: Review, 3: Relearning
+    last_review = Column(DateTime, nullable=True)
 
     flashcard_set = relationship("FlashcardSet", back_populates="flashcards")
 

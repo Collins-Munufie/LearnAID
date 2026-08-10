@@ -89,3 +89,22 @@ def upgrade_db_schema(engine):
             # Column likely already exists, ignore
             pass
 
+    # Check and add columns to flashcards table
+    flashcard_columns_to_add = [
+        ("due", "DATETIME DEFAULT CURRENT_TIMESTAMP"),
+        ("stability", "FLOAT DEFAULT 0.0"),
+        ("difficulty", "FLOAT DEFAULT 0.0"),
+        ("elapsed_days", "INTEGER DEFAULT 0"),
+        ("scheduled_days", "INTEGER DEFAULT 0"),
+        ("reps", "INTEGER DEFAULT 0"),
+        ("lapses", "INTEGER DEFAULT 0"),
+        ("state", "INTEGER DEFAULT 0"),
+        ("last_review", "DATETIME DEFAULT NULL")
+    ]
+    for col_name, col_type in flashcard_columns_to_add:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE flashcards ADD COLUMN {col_name} {col_type}"))
+                print(f"Database upgrade: Added column '{col_name}' to 'flashcards' table.")
+        except Exception as e:
+            pass

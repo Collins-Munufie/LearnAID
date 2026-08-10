@@ -65,6 +65,11 @@ def serialize_flashcard_set(s: models.FlashcardSet):
                 "question": fc.question,
                 "answer": fc.answer,
                 "mastery_level": fc.mastery_level,
+                "due": fc.due,
+                "stability": fc.stability,
+                "difficulty": fc.difficulty,
+                "reps": fc.reps,
+                "state": fc.state
             }
             for fc in s.flashcards
         ],

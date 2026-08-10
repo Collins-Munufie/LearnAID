@@ -39,6 +39,9 @@ class SelectiveGenerationRequest(BaseModel):
     modules: List[str]
     title: str = "Generated Content"
 
+class FSRSReviewRequest(BaseModel):
+    rating: int # 1: Again, 2: Hard, 3: Good, 4: Easy
+
 # Allow requests from the React frontend (CORS configuration)
 # Note: Wildcard "*" cannot be used with allow_credentials=True.
 allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
@@ -332,3 +335,75 @@ async def grade_test_endpoint(req: GradeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/api/flashcards/{flashcard_id}/review")
+def review_flashcard(flashcard_id: int, req: FSRSReviewRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    card = db.query(models.Flashcard).filter(models.Flashcard.id == flashcard_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+        
+    # verify ownership
+    if card.flashcard_set.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    current_state = {
+        "due": card.due,
+        "stability": card.stability,
+        "difficulty": card.difficulty,
+        "elapsed_days": card.elapsed_days,
+        "scheduled_days": card.scheduled_days,
+        "reps": card.reps,
+        "lapses": card.lapses,
+        "state": card.state,
+        "last_review": card.last_review
+    }
+    
+    from services.fsrs_service import calculate_next_review
+    next_state = calculate_next_review(current_state, req.rating)
+    
+    card.due = next_state['due']
+    card.stability = next_state['stability']
+    card.difficulty = next_state['difficulty']
+    card.elapsed_days = next_state['elapsed_days']
+    card.scheduled_days = next_state['scheduled_days']
+    card.reps = next_state['reps']
+    card.lapses = next_state['lapses']
+    card.state = next_state['state']
+    card.last_review = next_state['last_review']
+    
+    db.commit()
+    db.refresh(card)
+    
+    return next_state
+
+
+@app.get("/api/analytics/memory")
+def get_memory_analytics(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    sets = db.query(models.FlashcardSet).filter(models.FlashcardSet.user_id == current_user.id).all()
+    set_ids = [s.id for s in sets]
+    
+    if not set_ids:
+        return {"total_cards": 0, "active_cards": 0, "cards_due_today": 0, "average_stability": 0, "forgetting_curve": []}
+        
+    import datetime
+    flashcards = db.query(models.Flashcard).filter(models.Flashcard.set_id.in_(set_ids)).all()
+    
+    total_cards = len(flashcards)
+    cards_due_today = sum(1 for f in flashcards if f.due <= datetime.datetime.utcnow())
+    
+    active_cards = [f for f in flashcards if f.state > 0]
+    avg_stability = sum(f.stability for f in active_cards) / len(active_cards) if active_cards else 0
+    
+    curve = []
+    if avg_stability > 0:
+        for day in range(0, 31, 2):
+            retention = (1 + day / (9 * avg_stability)) ** -1
+            curve.append({"day": day, "retention": round(retention * 100, 2)})
+            
+    return {
+        "total_cards": total_cards,
+        "active_cards": len(active_cards),
+        "cards_due_today": cards_due_today,
+        "average_stability": round(avg_stability, 2),
+        "forgetting_curve": curve
+    }
