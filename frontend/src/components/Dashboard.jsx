@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   const fetchSets = useCallback(async () => {
     try {
-      const res = await api.get('/api/flashcard-sets');
+      const res = await api.get('/api/flashcard-sets/');
       setSets(res.data);
     } catch (err) {
       console.error(err);
