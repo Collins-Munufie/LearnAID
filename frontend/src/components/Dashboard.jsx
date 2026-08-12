@@ -336,12 +336,18 @@ export default function Dashboard() {
                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-brand-text mb-3">Welcome back, {dashboardData.user.name}</h1>
                <p className="text-brand-muted text-sm sm:text-base max-w-xl font-medium leading-relaxed">Accelerate your active recall with custom spaced repetition and advanced AI-driven study modules.</p>
              </div>
-             <div className="z-10 shrink-0 w-full md:w-auto">
+             <div className="z-10 shrink-0 w-full md:w-52 flex flex-col gap-3">
+               <button 
+                  onClick={() => navigate('/generate')}
+                  className="w-full px-5 py-3.5 bg-brand-primary hover:bg-brand-primary/95 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center md:hover:scale-[1.02] min-h-[44px]"
+               >
+                  Upload Documents
+               </button>
                <button 
                   onClick={() => navigate('/image-chat')}
-                  className="w-full md:w-auto px-6 py-4 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-2xl font-black text-sm uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 md:hover:scale-[1.02]"
+                  className="w-full px-5 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center md:hover:scale-[1.02] min-h-[44px]"
                >
-                  <Sparkles className="w-4 h-4 animate-pulse" /> Ask About Images
+                  Ask About Images
                </button>
              </div>
           </div>
