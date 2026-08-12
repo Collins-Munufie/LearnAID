@@ -6,6 +6,8 @@ import { BrainCircuit, Loader2, Play, Plus, BookOpen, Download, Database, CheckC
 import Logo from './Logo';
 import ProfileDrawer from './ProfileDrawer';
 import api, { getErrorMessage } from '../lib/api';
+import ContributionHeatmap from './ContributionHeatmap';
+import StudyRooms from './StudyRooms';
 
 const WeeklyActivityChart = lazy(() => import('./WeeklyActivityChart'));
 const MemoryAnalytics = lazy(() => import('./MemoryAnalytics'));
@@ -13,6 +15,7 @@ const MemoryAnalytics = lazy(() => import('./MemoryAnalytics'));
 export default function Dashboard() {
   const { user, fetchUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [currentTab, setCurrentTab] = useState('dashboard'); // 'dashboard' | 'groups'
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -278,7 +281,23 @@ export default function Dashboard() {
       {/* 1. HEADER / NAVBAR */}
       <header className="sticky top-0 z-50 bg-brand-surface/80 backdrop-blur-md border-b border-brand-border">
          <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <Logo size="small" />
+            <div className="flex items-center gap-8">
+               <Logo size="small" />
+               <nav className="flex items-center gap-1 bg-brand-muted/5 p-1 rounded-xl border border-brand-border/40">
+                  <button 
+                     onClick={() => setCurrentTab('dashboard')} 
+                     className={`text-xs font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-lg cursor-pointer ${currentTab === 'dashboard' ? 'bg-brand-surface text-brand-primary border border-brand-border/50 shadow-sm' : 'text-brand-muted hover:text-brand-text'}`}
+                  >
+                    Personal Space
+                  </button>
+                  <button 
+                     onClick={() => setCurrentTab('groups')} 
+                     className={`text-xs font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-lg cursor-pointer ${currentTab === 'groups' ? 'bg-brand-surface text-brand-primary border border-brand-border/50 shadow-sm' : 'text-brand-muted hover:text-brand-text'}`}
+                  >
+                    Study Groups
+                  </button>
+               </nav>
+            </div>
             
             <div className="flex items-center gap-4">
 
@@ -306,7 +325,11 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-6 pt-10 relative z-10">
          
-         {/* Dashboard Hero Greeting Card */}
+         {currentTab === 'groups' ? (
+            <StudyRooms />
+         ) : (
+            <>
+              {/* Dashboard Hero Greeting Card */}
           <div className="glass-panel p-8 rounded-[2.5rem] border border-brand-border bg-gradient-to-r from-brand-surface to-brand-primary/5 shadow-lg mb-10 overflow-hidden relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
              <div className="absolute right-0 top-0 w-64 h-64 bg-brand-primary/10 rounded-full blur-3xl pointer-events-none"></div>
              <div className="z-10">
@@ -492,6 +515,11 @@ export default function Dashboard() {
                 </motion.div>
               </div>
             </div>
+            
+            {/* Annual Study Timeline Heatmap */}
+            <div className="mt-6">
+              <ContributionHeatmap />
+            </div>
           </div>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -648,6 +676,8 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+          </>
+         )}
 
       </div>
 

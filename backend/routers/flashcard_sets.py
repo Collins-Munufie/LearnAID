@@ -216,11 +216,21 @@ def get_user_flashcard_set(
     flashcard_set = (
         db.query(models.FlashcardSet)
         .options(selectinload(models.FlashcardSet.flashcards))
-        .filter(models.FlashcardSet.id == set_id, models.FlashcardSet.user_id == current_user.id)
+        .filter(models.FlashcardSet.id == set_id)
         .first()
     )
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Study set not found")
+
+    if flashcard_set.user_id != current_user.id:
+        is_member = False
+        if flashcard_set.room_id is not None:
+            is_member = db.query(models.StudyRoomMember).filter(
+                models.StudyRoomMember.room_id == flashcard_set.room_id,
+                models.StudyRoomMember.user_id == current_user.id
+            ).first() is not None
+        if not is_member:
+            raise HTTPException(status_code=403, detail="Not authorized to access this study set")
 
     return serialize_flashcard_set(flashcard_set)
 
@@ -236,7 +246,17 @@ def update_flashcard_mastery(
         raise HTTPException(status_code=404, detail="Flashcard not found")
         
     flashcard_set = db.query(models.FlashcardSet).filter(models.FlashcardSet.id == flashcard.set_id).first()
-    if not flashcard_set or flashcard_set.user_id != current_user.id:
+    if not flashcard_set:
+        raise HTTPException(status_code=404, detail="Study set not found")
+        
+    is_authorized = (flashcard_set.user_id == current_user.id)
+    if not is_authorized and flashcard_set.room_id is not None:
+        is_authorized = db.query(models.StudyRoomMember).filter(
+            models.StudyRoomMember.room_id == flashcard_set.room_id,
+            models.StudyRoomMember.user_id == current_user.id
+        ).first() is not None
+        
+    if not is_authorized:
         raise HTTPException(status_code=403, detail="Not authorized")
         
     flashcard.mastery_level = data.mastery_level
@@ -251,9 +271,19 @@ def update_last_accessed(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    flashcard_set = db.query(models.FlashcardSet).filter(models.FlashcardSet.id == set_id, models.FlashcardSet.user_id == current_user.id).first()
+    flashcard_set = db.query(models.FlashcardSet).filter(models.FlashcardSet.id == set_id).first()
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Set not found")
+        
+    is_authorized = (flashcard_set.user_id == current_user.id)
+    if not is_authorized and flashcard_set.room_id is not None:
+        is_authorized = db.query(models.StudyRoomMember).filter(
+            models.StudyRoomMember.room_id == flashcard_set.room_id,
+            models.StudyRoomMember.user_id == current_user.id
+        ).first() is not None
+        
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized")
         
     flashcard_set.last_accessed = datetime.datetime.utcnow()
     db.commit()

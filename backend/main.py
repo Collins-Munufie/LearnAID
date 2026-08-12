@@ -12,7 +12,7 @@ from services.audio_extractor import extract_audio_transcript
 
 import models
 from database import engine, upgrade_db_schema
-from routers import auth, flashcard_sets, user_stats, mock_exams, image_chats
+from routers import auth, flashcard_sets, user_stats, mock_exams, image_chats, study_rooms
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -26,6 +26,7 @@ app.include_router(flashcard_sets.router)
 app.include_router(user_stats.router)
 app.include_router(mock_exams.router)
 app.include_router(image_chats.router)
+app.include_router(study_rooms.router)
 
 
 class UrlRequest(BaseModel):

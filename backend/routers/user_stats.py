@@ -155,3 +155,33 @@ def get_weekly_activity(db: Session = Depends(get_db), current_user: models.User
         })
         
     return result
+
+
+@router.get("/activity/heatmap")
+def get_heatmap_activity(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    today = datetime.datetime.utcnow().date()
+    start_date = today - datetime.timedelta(days=364) # last 365 days
+    
+    grouped_logs = (
+        db.query(func.date(models.ActivityLog.date), func.count(models.ActivityLog.id))
+        .filter(
+            models.ActivityLog.user_id == current_user.id,
+            func.date(models.ActivityLog.date) >= start_date
+        )
+        .group_by(func.date(models.ActivityLog.date))
+        .all()
+    )
+    
+    result = {}
+    for log_date, count in grouped_logs:
+        if not log_date:
+            continue
+        if isinstance(log_date, str):
+            date_str = log_date
+        elif hasattr(log_date, "strftime"):
+            date_str = log_date.strftime("%Y-%m-%d")
+        else:
+            date_str = str(log_date)
+        result[date_str] = count
+        
+    return result

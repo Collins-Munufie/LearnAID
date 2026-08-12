@@ -120,3 +120,15 @@ def upgrade_db_schema(engine):
                 print(f"Database upgrade: Added column '{col_name}' to 'flashcards' table.")
         except Exception as e:
             pass
+
+    # Check and add columns to flashcard_sets table
+    flashcard_set_columns_to_add = [
+        ("room_id", "INTEGER DEFAULT NULL")
+    ]
+    for col_name, col_type in flashcard_set_columns_to_add:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE flashcard_sets ADD COLUMN {col_name} {col_type}"))
+                print(f"Database upgrade: Added column '{col_name}' to 'flashcard_sets' table.")
+        except Exception as e:
+            pass

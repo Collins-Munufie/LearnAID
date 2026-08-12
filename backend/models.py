@@ -14,6 +14,8 @@ class User(Base):
 
     flashcard_sets = relationship("FlashcardSet", back_populates="owner", cascade="all, delete-orphan")
     stats = relationship("UserStats", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    created_rooms = relationship("StudyRoom", back_populates="creator", cascade="all, delete-orphan")
+    joined_rooms = relationship("StudyRoom", secondary="study_room_members", back_populates="members")
 
 class UserStats(Base):
     __tablename__ = "user_stats"
@@ -66,9 +68,11 @@ class FlashcardSet(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_accessed = Column(DateTime, default=datetime.datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    room_id = Column(Integer, ForeignKey("study_rooms.id", ondelete="SET NULL"), nullable=True, index=True)
 
     owner = relationship("User", back_populates="flashcard_sets")
     flashcards = relationship("Flashcard", back_populates="flashcard_set", cascade="all, delete-orphan")
+    room = relationship("StudyRoom", back_populates="flashcard_sets")
 
 class Flashcard(Base):
     __tablename__ = "flashcards"
@@ -123,4 +127,27 @@ class ImageChatSession(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     owner = relationship("User")
+
+
+class StudyRoom(Base):
+    __tablename__ = "study_rooms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    code = Column(String, unique=True, index=True, nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    creator = relationship("User", back_populates="created_rooms")
+    members = relationship("User", secondary="study_room_members", back_populates="joined_rooms")
+    flashcard_sets = relationship("FlashcardSet", back_populates="room")
+
+
+class StudyRoomMember(Base):
+    __tablename__ = "study_room_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(Integer, ForeignKey("study_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    joined_at = Column(DateTime, default=datetime.datetime.utcnow)
 
