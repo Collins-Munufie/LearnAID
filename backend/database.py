@@ -99,9 +99,11 @@ def upgrade_db_schema(engine):
             # Column likely already exists, ignore
             pass
 
-    # Check and add columns to flashcards table
+    # Use TIMESTAMP for PostgreSQL and DATETIME for SQLite to prevent migration failures
+    db_type = "TIMESTAMP" if engine.name == "postgresql" else "DATETIME"
+
     flashcard_columns_to_add = [
-        ("due", "DATETIME DEFAULT NULL"),
+        ("due", f"{db_type} DEFAULT NULL"),
         ("stability", "FLOAT DEFAULT 0.0"),
         ("difficulty", "FLOAT DEFAULT 0.0"),
         ("elapsed_days", "INTEGER DEFAULT 0"),
@@ -109,7 +111,7 @@ def upgrade_db_schema(engine):
         ("reps", "INTEGER DEFAULT 0"),
         ("lapses", "INTEGER DEFAULT 0"),
         ("state", "INTEGER DEFAULT 0"),
-        ("last_review", "DATETIME DEFAULT NULL")
+        ("last_review", f"{db_type} DEFAULT NULL")
     ]
     for col_name, col_type in flashcard_columns_to_add:
         try:
