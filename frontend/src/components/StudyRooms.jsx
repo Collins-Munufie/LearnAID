@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, UserPlus, FileText, Award, LogOut, Copy, Check, ChevronRight, BookOpen, Send, HelpCircle, Loader2 } from 'lucide-react';
+import { Users, Plus, UserPlus, FileText, Award, LogOut, Copy, Check, ChevronRight, BookOpen, Send, Loader2 } from 'lucide-react';
 import api, { getErrorMessage } from '../lib/api';
 
 export default function StudyRooms() {
@@ -17,7 +17,10 @@ export default function StudyRooms() {
   const [newRoomName, setNewRoomName] = useState('');
   const [selectedDeckId, setSelectedDeckId] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
-  const [activeTab, setActiveTab] = useState('decks'); // 'decks' | 'leaderboard' | 'share'
+  
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -63,8 +66,6 @@ export default function StudyRooms() {
       const sharedDeckIds = new Set(roomDetailsRes.data.decks.map(d => d.id));
       const shareable = (personalDecksRes.data || []).filter(d => !sharedDeckIds.has(d.id));
       setPersonalDecks(shareable);
-      
-      setActiveTab('decks');
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to fetch study room details.'));
     } finally {
@@ -86,6 +87,7 @@ export default function StudyRooms() {
       const res = await api.post('/api/study-rooms/', { name: newRoomName });
       setNewRoomName('');
       setSuccess(`Created study room "${res.data.name}"!`);
+      setShowCreateModal(false);
       await fetchRooms(res.data.id);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create room.'));
@@ -104,6 +106,7 @@ export default function StudyRooms() {
       const res = await api.post('/api/study-rooms/join', { code: roomCode });
       setRoomCode('');
       setSuccess(res.data.message || 'Successfully joined the study group!');
+      setShowJoinModal(false);
       await fetchRooms(res.data.room_id);
     } catch (err) {
       setError(getErrorMessage(err, 'Invalid room code or unable to join.'));
@@ -153,12 +156,42 @@ export default function StudyRooms() {
     }
   };
 
+  // Fallback Copy function for non-secure contexts (HTTP)
+  const fallbackCopyText = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
   // Copy Room Code to clipboard
   const copyToClipboard = () => {
     if (!activeRoom) return;
-    navigator.clipboard.writeText(activeRoom.code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(activeRoom.code)
+        .then(() => {
+          setCopiedCode(true);
+          setTimeout(() => setCopiedCode(false), 2000);
+        })
+        .catch(err => {
+          console.warn('Clipboard API failed, using fallback copy:', err);
+          fallbackCopyText(activeRoom.code);
+        });
+    } else {
+      fallbackCopyText(activeRoom.code);
+    }
   };
 
   return (
@@ -187,9 +220,29 @@ export default function StudyRooms() {
         {/* Left Column: Room list and management */}
         <div className="lg:col-span-1 flex flex-col gap-6">
           <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-brand-text mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-brand-primary" /> Study Groups
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-brand-text flex items-center gap-2">
+                <Users className="w-5 h-5 text-brand-primary" /> Study Groups
+              </h3>
+              
+              {/* Quick action buttons in sidebar header */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setShowJoinModal(true)}
+                  className="p-1.5 hover:bg-brand-primary/15 text-brand-muted hover:text-brand-primary rounded-lg transition-all cursor-pointer border border-brand-border/40 hover:border-brand-primary/20"
+                  title="Join Group via Code"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="p-1.5 hover:bg-emerald-500/15 text-brand-muted hover:text-emerald-500 rounded-lg transition-all cursor-pointer border border-brand-border/40 hover:border-emerald-500/20"
+                  title="Create New Group"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
             
             {/* Joined Rooms List */}
             {loading ? (
@@ -199,7 +252,7 @@ export default function StudyRooms() {
             ) : rooms.length === 0 ? (
               <p className="text-brand-muted text-xs text-center py-6">You have not joined any study rooms yet.</p>
             ) : (
-              <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto no-scrollbar">
+              <div className="flex flex-col gap-2 max-h-[360px] overflow-y-auto no-scrollbar">
                 {rooms.map(room => (
                   <button
                     key={room.id}
@@ -220,54 +273,9 @@ export default function StudyRooms() {
               </div>
             )}
           </div>
-
-          {/* Action Boxes: Create or Join */}
-          <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-            {/* Join Room */}
-            <form onSubmit={handleJoinRoom} className="flex flex-col gap-2 border-b border-brand-muted/10 pb-4">
-              <label className="text-[11px] font-bold text-brand-muted uppercase">Join a Group</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter Room Code"
-                  value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value)}
-                  className="bg-brand-bg/50 border border-brand-muted/15 rounded-xl px-3 py-2 text-xs w-full focus:outline-none focus:border-brand-primary uppercase"
-                />
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="bg-brand-primary hover:bg-brand-primary/95 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all disabled:opacity-50"
-                >
-                  <UserPlus className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
-
-            {/* Create Room */}
-            <form onSubmit={handleCreateRoom} className="flex flex-col gap-2">
-              <label className="text-[11px] font-bold text-brand-muted uppercase">Create a Group</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Class/Group Name"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                  className="bg-brand-bg/50 border border-brand-muted/15 rounded-xl px-3 py-2 text-xs w-full focus:outline-none focus:border-brand-primary"
-                />
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all disabled:opacity-50"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
 
-        {/* Right Column: Active study room details */}
+        {/* Right Column: Active study room details (Redesigned Split Layout) */}
         <div className="lg:col-span-3">
           {roomLoading ? (
             <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[400px]">
@@ -284,20 +292,25 @@ export default function StudyRooms() {
               <p className="text-brand-muted text-xs max-w-md mb-6">
                 Collaborate with classmates on university courses. Generate unified study decks, share revision notes, and climb the weekly leaderboard for mock exam accuracy.
               </p>
-              <div className="flex gap-3 text-xs font-medium text-brand-muted">
-                <div className="flex items-center gap-1.5 bg-brand-muted/5 px-3 py-1.5 rounded-xl">
-                  <Plus className="w-4 h-4" /> Create Rooms
-                </div>
-                <div className="flex items-center gap-1.5 bg-brand-muted/5 px-3 py-1.5 rounded-xl">
+              
+              {/* Operational Action Buttons under welcome message */}
+              <div className="flex flex-col sm:flex-row gap-3 text-xs font-medium">
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center justify-center gap-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white px-5 py-3 rounded-2xl transition-all cursor-pointer font-bold shadow-md hover:scale-102 active:scale-95 min-h-[44px]"
+                >
+                  <Plus className="w-4 h-4" /> Create a Group
+                </button>
+                <button 
+                  onClick={() => setShowJoinModal(true)}
+                  className="flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl transition-all cursor-pointer font-bold shadow-md hover:scale-102 active:scale-95 min-h-[44px]"
+                >
                   <UserPlus className="w-4 h-4" /> Join via Code
-                </div>
-                <div className="flex items-center gap-1.5 bg-brand-muted/5 px-3 py-1.5 rounded-xl">
-                  <Award className="w-4 h-4" /> Compete Weekly
-                </div>
+                </button>
               </div>
             </div>
           ) : (
-            /* Active Study Room Dashboard */
+            /* Redesigned Active Study Room (Simplified tabless split view) */
             <div className="flex flex-col gap-6">
               
               {/* Room Header Info */}
@@ -319,28 +332,8 @@ export default function StudyRooms() {
                   </div>
                 </div>
 
-                {/* Member avatars list */}
+                {/* Header Actions */}
                 <div className="flex items-center gap-4">
-                  <div className="flex -space-x-2.5 overflow-hidden">
-                    {activeRoom.members.slice(0, 4).map((member, idx) => (
-                      <div 
-                        key={member.id} 
-                        className="w-8 h-8 rounded-full border-2 border-brand-card bg-brand-primary/10 flex items-center justify-center text-[10px] font-bold text-brand-primary overflow-hidden"
-                        title={member.name}
-                      >
-                        {member.profile_picture ? (
-                          <img src={member.profile_picture} alt={member.name} className="w-full h-full object-cover" />
-                        ) : (
-                          member.name.slice(0,2).toUpperCase()
-                        )}
-                      </div>
-                    ))}
-                    {activeRoom.members.length > 4 && (
-                      <div className="w-8 h-8 rounded-full border-2 border-brand-card bg-brand-muted text-white flex items-center justify-center text-[9px] font-bold">
-                        +{activeRoom.members.length - 4}
-                      </div>
-                    )}
-                  </div>
                   <button 
                     onClick={handleLeaveRoom}
                     className="flex items-center gap-1 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ml-auto md:ml-0 cursor-pointer"
@@ -350,84 +343,50 @@ export default function StudyRooms() {
                 </div>
               </div>
 
-              {/* Navigation Tabs */}
-              <div className="flex border-b border-brand-muted/10">
-                <button
-                  onClick={() => setActiveTab('decks')}
-                  className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
-                    activeTab === 'decks'
-                      ? 'border-brand-primary text-brand-primary'
-                      : 'border-transparent text-brand-muted hover:text-brand-text'
-                  }`}
-                >
-                  Decks & Notes ({activeRoom.decks.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('leaderboard')}
-                  className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-                    activeTab === 'leaderboard'
-                      ? 'border-brand-primary text-brand-primary'
-                      : 'border-transparent text-brand-muted hover:text-brand-text'
-                  }`}
-                >
-                  <Award className="w-4 h-4" /> Room Leaderboard
-                </button>
-                <button
-                  onClick={() => setActiveTab('share')}
-                  className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-                    activeTab === 'share'
-                      ? 'border-brand-primary text-brand-primary'
-                      : 'border-transparent text-brand-muted hover:text-brand-text'
-                  }`}
-                >
-                  <Send className="w-4 h-4" /> Share Decks
-                </button>
-              </div>
-
-              {/* Active Tab Panel Content */}
-              <div className="min-h-[300px]">
+              {/* Redesigned Split Grid Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Tab: Decks List */}
-                {activeTab === 'decks' && (
-                  <div className="flex flex-col gap-4">
+                {/* Left Side: Shared Decks & Summaries (2/3 width) */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                  
+                  {/* Shared Decks List Card */}
+                  <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-3xl p-6 shadow-sm">
+                    <h3 className="text-sm font-bold text-brand-text mb-4 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-brand-primary" /> Shared Study Decks ({activeRoom.decks.length})
+                    </h3>
+                    
                     {activeRoom.decks.length === 0 ? (
-                      <div className="bg-brand-card/25 border border-brand-muted/10 rounded-2xl p-8 text-center flex flex-col items-center justify-center">
+                      <div className="bg-brand-muted/5 border border-dashed border-brand-border rounded-2xl p-8 text-center flex flex-col items-center justify-center">
                         <FileText className="w-10 h-10 text-brand-muted mb-2 opacity-50" />
                         <h4 className="text-xs font-bold text-brand-text mb-1">No shared decks yet</h4>
-                        <p className="text-brand-muted text-[11px] max-w-sm mb-4">Get started by sharing your study sets or summaries to collaborate on class resources.</p>
-                        <button 
-                          onClick={() => setActiveTab('share')} 
-                          className="bg-brand-primary hover:bg-brand-primary/90 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer"
-                        >
-                          Share Your First Deck
-                        </button>
+                        <p className="text-brand-muted text-[10px] max-w-sm mb-4">Link one of your study sets using the form below to collaborate with the group.</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {activeRoom.decks.map(deck => (
                           <div 
                             key={deck.id}
-                            className="bg-brand-card/30 border border-brand-muted/10 hover:border-brand-primary/30 rounded-2xl p-5 shadow-sm transition-all duration-300 flex flex-col justify-between group"
+                            className="bg-brand-card/45 border border-brand-muted/10 hover:border-brand-primary/30 rounded-2xl p-4.5 shadow-sm transition-all duration-300 flex flex-col justify-between group"
                           >
                             <div>
                               <div className="flex justify-between items-start mb-2">
-                                <h4 className="text-sm font-bold text-brand-text truncate max-w-[200px]">{deck.title}</h4>
-                                <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                <h4 className="text-xs font-bold text-brand-text truncate max-w-[140px]">{deck.title}</h4>
+                                <span className="bg-brand-primary/10 text-brand-primary text-[9px] font-bold px-2 py-0.5 rounded-full">
                                   {deck.flashcards_count} Cards
                                 </span>
                               </div>
-                              <p className="text-brand-muted text-[11px] line-clamp-3 mb-4 leading-relaxed">
+                              <p className="text-brand-muted text-[10px] line-clamp-3 mb-3 leading-relaxed">
                                 {deck.summary || "No notes summary provided for this shared deck."}
                               </p>
                             </div>
                             
-                            <div className="flex items-center justify-between border-t border-brand-muted/10 pt-3 text-[10px]">
+                            <div className="flex items-center justify-between border-t border-brand-muted/10 pt-2.5 text-[9px]">
                               <span className="text-brand-muted">Shared by: <strong className="text-brand-text">{deck.creator_name}</strong></span>
                               <a
                                 href={`/study/${deck.id}`}
                                 className="bg-brand-primary text-white font-bold px-3 py-1.5 rounded-xl hover:scale-105 transition-all flex items-center gap-1 group-hover:shadow-[0_2px_8px_rgba(var(--brand-primary-rgb),0.2)]"
                               >
-                                <BookOpen className="w-3.5 h-3.5" /> Study Deck
+                                <BookOpen className="w-3 h-3" /> Study
                               </a>
                             </div>
                           </div>
@@ -435,20 +394,54 @@ export default function StudyRooms() {
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Tab: Leaderboard */}
-                {activeTab === 'leaderboard' && (
-                  <div className="bg-brand-card/25 border border-brand-muted/10 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex flex-col gap-0.5">
-                        <h4 className="text-xs font-bold text-brand-text">Weekly Accuracy Leaderboard</h4>
-                        <p className="text-brand-muted text-[10px]">Calculated based on mock exam scores in the last 7 days.</p>
-                      </div>
-                      <span className="bg-brand-primary/10 text-brand-primary text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Weekly Reset</span>
+                  {/* Inline Share Deck Card */}
+                  <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-3xl p-6 shadow-sm">
+                    <h4 className="text-xs font-bold text-brand-text mb-2">Share one of your decks</h4>
+                    <p className="text-brand-muted text-[10px] mb-4">Choose from your personal study sets to make them visible and reviewable for all members of this group.</p>
+                    
+                    {personalDecks.length === 0 ? (
+                      <p className="text-brand-muted text-[10px] bg-brand-muted/5 p-3 rounded-xl text-center border border-brand-muted/10">
+                        All your decks have already been shared with this room!
+                      </p>
+                    ) : (
+                      <form onSubmit={handleShareDeck} className="flex flex-col sm:flex-row gap-3">
+                        <select
+                          value={selectedDeckId}
+                          onChange={(e) => setSelectedDeckId(e.target.value)}
+                          className="bg-brand-bg/50 border border-brand-muted/15 rounded-xl px-3 py-2 text-xs text-brand-text focus:outline-none focus:border-brand-primary flex-1"
+                        >
+                          <option value="">-- Select a deck to share --</option>
+                          {personalDecks.map(deck => (
+                            <option key={deck.id} value={deck.id}>{deck.title} ({deck.flashcards_count || 0} cards)</option>
+                          ))}
+                        </select>
+                        <button
+                          type="submit"
+                          disabled={!selectedDeckId || actionLoading}
+                          className="bg-brand-primary hover:bg-brand-primary/95 text-white rounded-xl px-4 py-2 text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          Share Deck
+                        </button>
+                      </form>
+                    )}
+                  </div>
+
+                </div>
+                
+                {/* Right Side: Leaderboard & Members List (1/3 width) */}
+                <div className="flex flex-col gap-6">
+                  
+                  {/* Leaderboard Card */}
+                  <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-3xl p-6 shadow-sm">
+                    <div className="flex flex-col gap-1 mb-4">
+                      <h4 className="text-xs font-bold text-brand-text flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-brand-primary" /> Weekly Leaderboard
+                      </h4>
+                      <p className="text-brand-muted text-[9px]">Based on mock exam accuracies (Past 7 days)</p>
                     </div>
-
-                    <div className="flex flex-col gap-3">
+                    
+                    <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto no-scrollbar">
                       {leaderboard.map((item, index) => {
                         const isTopThree = index < 3;
                         const badgeColors = ['bg-amber-400 text-amber-950', 'bg-slate-300 text-slate-900', 'bg-amber-600 text-amber-50'];
@@ -456,106 +449,165 @@ export default function StudyRooms() {
                         return (
                           <div
                             key={item.user_id}
-                            className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
+                            className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
                               isTopThree 
                                 ? 'bg-brand-card/45 border-brand-primary/20 shadow-sm' 
                                 : 'bg-brand-muted/5 border-transparent'
                             }`}
                           >
-                            <div className="flex items-center gap-3.5">
-                              {/* Rank badge */}
+                            <div className="flex items-center gap-2.5">
                               {isTopThree ? (
-                                <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${badgeColors[index]}`}>
+                                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${badgeColors[index]}`}>
                                   {index + 1}
                                 </span>
                               ) : (
-                                <span className="w-6 h-6 flex items-center justify-center text-xs font-bold text-brand-muted">
+                                <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold text-brand-muted">
                                   {index + 1}
                                 </span>
                               )}
-
-                              {/* Member Avatar and Details */}
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-[10px] font-bold text-brand-primary overflow-hidden">
+                              
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-[9px] font-bold text-brand-primary overflow-hidden">
                                   {item.profile_picture ? (
                                     <img src={item.profile_picture} alt={item.name} className="w-full h-full object-cover" />
                                   ) : (
                                     item.name.slice(0, 2).toUpperCase()
                                   )}
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-xs font-bold text-brand-text">{item.name}</span>
-                                  <span className="text-[9px] text-brand-muted">{item.attempts_count} quiz attempts this week</span>
+                                <div className="flex flex-col">
+                                  <span className="text-[11px] font-bold text-brand-text truncate max-w-[90px]">{item.name}</span>
+                                  <span className="text-[8px] text-brand-muted">{item.attempts_count} exams</span>
                                 </div>
                               </div>
                             </div>
-
-                            {/* Accuracy score */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex flex-col items-end gap-0.5">
-                                <span className="text-sm font-black text-brand-text">{item.avg_accuracy}%</span>
-                                <span className="text-[9px] text-brand-muted">Accuracy</span>
-                              </div>
-                              {/* Simple Mini Ring Progress bar */}
-                              <div className="w-8 h-8 rounded-full border-4 border-brand-muted/10 relative flex items-center justify-center">
-                                <div 
-                                  className="absolute inset-[-4px] rounded-full border-4 border-brand-primary/30" 
-                                  style={{ clipPath: `polygon(50% 50%, 50% 0%, ${item.avg_accuracy >= 25 ? '100% 0%,' : ''} ${item.avg_accuracy >= 50 ? '100% 100%,' : ''} ${item.avg_accuracy >= 75 ? '0% 100%,' : ''} 0% 0%)` }}
-                                />
-                              </div>
-                            </div>
+                            
+                            <span className="text-xs font-black text-brand-text">{item.avg_accuracy}%</span>
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                )}
 
-                {/* Tab: Share Decks dropdown */}
-                {activeTab === 'share' && (
-                  <div className="bg-brand-card/25 border border-brand-muted/10 rounded-2xl p-6 shadow-sm max-w-lg">
-                    <h4 className="text-xs font-bold text-brand-text mb-2">Link Personal Deck to Study Group</h4>
-                    <p className="text-brand-muted text-[10px] mb-4">
-                      Share any deck you have generated or uploaded. Once shared, all group members will be able to review, study, and complete quiz challenges for this deck.
-                    </p>
-
-                    {personalDecks.length === 0 ? (
-                      <p className="text-brand-muted text-xs bg-brand-muted/5 p-4 rounded-xl text-center border border-brand-muted/10">
-                        You don't have any personal decks available to share (or they are all already shared in this room).
-                      </p>
-                    ) : (
-                      <form onSubmit={handleShareDeck} className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-2">
-                          <label className="text-[10px] font-bold text-brand-muted uppercase">Select a Study Deck</label>
-                          <select
-                            value={selectedDeckId}
-                            onChange={(e) => setSelectedDeckId(e.target.value)}
-                            className="bg-brand-bg/50 border border-brand-muted/15 rounded-xl px-3 py-2.5 text-xs text-brand-text focus:outline-none focus:border-brand-primary"
-                          >
-                            <option value="">-- Choose from your decks --</option>
-                            {personalDecks.map(deck => (
-                              <option key={deck.id} value={deck.id}>{deck.title} ({deck.flashcards_count || 0} cards)</option>
-                            ))}
-                          </select>
+                  {/* Members List Card */}
+                  <div className="bg-brand-card/30 backdrop-blur-md border border-brand-muted/10 rounded-3xl p-6 shadow-sm">
+                    <h4 className="text-xs font-bold text-brand-text mb-3 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-brand-primary" /> Room Members ({activeRoom.members.length})
+                    </h4>
+                    
+                    <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto no-scrollbar">
+                      {activeRoom.members.map(member => (
+                        <div key={member.id} className="flex items-center justify-between p-2 rounded-xl bg-brand-muted/5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-brand-primary/10 flex items-center justify-center text-[9px] font-bold text-brand-primary overflow-hidden">
+                              {member.profile_picture ? (
+                                <img src={member.profile_picture} alt={member.name} className="w-full h-full object-cover" />
+                              ) : (
+                                member.name.slice(0, 2).toUpperCase()
+                              )}
+                            </div>
+                            <span className="text-[11px] font-medium text-brand-text">{member.name}</span>
+                          </div>
+                          {activeRoom.creator_id === member.id && (
+                            <span className="text-[8px] font-bold text-brand-primary bg-brand-primary/15 px-1.5 py-0.5 rounded">Owner</span>
+                          )}
                         </div>
-                        <button
-                          type="submit"
-                          disabled={!selectedDeckId || actionLoading}
-                          className="bg-brand-primary hover:bg-brand-primary/95 text-white rounded-xl py-2.5 text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Send className="w-4 h-4" /> Share Deck with Room
-                        </button>
-                      </form>
-                    )}
+                      ))}
+                    </div>
                   </div>
-                )}
 
+                </div>
               </div>
+
             </div>
           )}
         </div>
 
       </div>
+
+      {/* CREATE ROOM MODAL */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-panel p-6 rounded-3xl border border-brand-border shadow-2xl max-w-sm w-full relative bg-brand-surface"
+            >
+              <button 
+                onClick={() => { setShowCreateModal(false); setError(''); setSuccess(''); }} 
+                className="absolute top-5 right-5 text-brand-muted hover:text-brand-text cursor-pointer font-bold text-xs"
+              >
+                ✖
+              </button>
+              <h3 className="text-sm font-bold text-brand-text mb-4">Create a New Study Group</h3>
+              <form onSubmit={handleCreateRoom} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-muted uppercase">Group / Class Name</label>
+                  <input 
+                    type="text" 
+                    value={newRoomName} 
+                    onChange={(e) => setNewRoomName(e.target.value)}
+                    className="w-full bg-brand-bg/50 border border-brand-muted/15 rounded-xl p-3 text-xs text-brand-text outline-none focus:border-brand-primary"
+                    placeholder="e.g. Organic Chemistry 101"
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={actionLoading}
+                  className="w-full py-3 bg-brand-primary text-white font-bold rounded-xl text-xs hover:scale-105 active:scale-95 transition-transform shadow-md cursor-pointer flex items-center justify-center min-h-[40px]"
+                >
+                  {actionLoading ? 'Creating...' : 'Create Group'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* JOIN ROOM MODAL */}
+      <AnimatePresence>
+        {showJoinModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-panel p-6 rounded-3xl border border-brand-border shadow-2xl max-w-sm w-full relative bg-brand-surface"
+            >
+              <button 
+                onClick={() => { setShowJoinModal(false); setError(''); setSuccess(''); }} 
+                className="absolute top-5 right-5 text-brand-muted hover:text-brand-text cursor-pointer font-bold text-xs"
+              >
+                ✖
+              </button>
+              <h3 className="text-sm font-bold text-brand-text mb-4">Join an Existing Study Group</h3>
+              <form onSubmit={handleJoinRoom} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-brand-muted uppercase">Enter Room Code</label>
+                  <input 
+                    type="text" 
+                    value={roomCode} 
+                    onChange={(e) => setRoomCode(e.target.value)}
+                    className="w-full bg-brand-bg/50 border border-brand-muted/15 rounded-xl p-3 text-xs text-brand-text outline-none focus:border-brand-primary uppercase"
+                    placeholder="e.g. CHEM12"
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={actionLoading}
+                  className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl text-xs hover:scale-105 active:scale-95 transition-transform shadow-md cursor-pointer flex items-center justify-center min-h-[40px]"
+                >
+                  {actionLoading ? 'Joining...' : 'Join Group'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

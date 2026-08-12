@@ -610,14 +610,14 @@ export default function Dashboard() {
                           <div className="h-full bg-brand-primary" style={{ width: `${set.progressPercent}%` }}></div>
                         </div>
 
-                         <div className="flex gap-3 mt-auto">
-                           <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-surface md:hover:bg-brand-primary/10 active:bg-brand-primary/20 text-brand-text border border-brand-border rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold active:scale-95 min-h-[44px]">
-                             Review
-                           </button>
-                           <button onClick={() => handleContinue(set)} className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 min-h-[44px]">
-                             <Play className="w-4 h-4" /> Continue
-                           </button>
-                         </div>
+                          <div className="flex gap-3 mt-auto">
+                            <button 
+                              onClick={() => handleContinue(set)} 
+                              className="w-full py-3 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl transition-all duration-75 flex items-center justify-center gap-2 font-bold shadow-md active:scale-95 min-h-[44px] cursor-pointer"
+                            >
+                              <Play className="w-4 h-4 animate-pulse" /> Continue Studying
+                            </button>
+                          </div>
                      </motion.div>
                   ))
                )}
