@@ -181,7 +181,7 @@ def get_user_flashcard_sets(
     result = []
     for s in sets:
         fc_count = total_counts.get(s.id, 0)
-        mastered_count = mastered_counts.get(s.id, 0)
+        mastery_score = mastery_scores.get(s.id, 0)
         p_info = presence_info.get(s.id, {"has_podcast": False, "has_tutor": False, "has_raw_content": False})
         
         gen_modes = []
@@ -202,7 +202,7 @@ def get_user_flashcard_sets(
             "created_at": s.created_at,
             "last_accessed": s.last_accessed,
             "flashcards_count": fc_count,
-            "mastered_count": mastered_count,
+            "mastery_score": int(mastery_score) if mastery_score else 0,
             "generated_modes": gen_modes
         })
     return result

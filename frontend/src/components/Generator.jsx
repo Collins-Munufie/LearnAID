@@ -53,7 +53,7 @@ export default function Generator() {
     formData.append("file", file);
 
     try {
-      const response = await api.post("/api/extract-document", formData);
+      const response = await api.post("/api/extract-document", formData, { longRunning: true });
       const extractedText = response.data.extracted_text;
       const title = response.data.title;
       setExtractedData(extractedText);
@@ -106,7 +106,7 @@ export default function Generator() {
     formData.append("file", file);
 
     try {
-      const response = await api.post("/api/extract-audio", formData);
+      const response = await api.post("/api/extract-audio", formData, { longRunning: true });
       setExtractedData(response.data.extracted_text);
       setSetTitle(response.data.title || "Live Lecture Transcription");
       setPhase(2);
@@ -126,7 +126,7 @@ export default function Generator() {
     formData.append("file", file);
 
     try {
-      const response = await api.post("/api/extract-ocr", formData);
+      const response = await api.post("/api/extract-ocr", formData, { longRunning: true });
       setExtractedData(response.data.extracted_text);
       setSetTitle(response.data.title || "Handwritten Notes");
       setPhase(2);

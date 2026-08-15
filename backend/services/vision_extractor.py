@@ -1,55 +1,61 @@
 import os
 import base64
 import logging
-from openai import OpenAI
+import requests
+import json
 
 logger = logging.getLogger(__name__)
 
-# Standardize to use the OpenAI SDK wrapper like ai_engine.py
-client = OpenAI(
-    api_key=os.environ.get("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
-)
 def extract_text_from_image(file_bytes: bytes) -> str:
     """
-    Takes an image byte stream, encodes to Base64, and prompts the LLaMA 3.2 Vision Preview model
+    Takes an image byte stream, encodes to Base64, and prompts the Gemini Flash model
     to securely and precisely extract all explicit textual content within the image.
     """
     try:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY is not set.")
+            
         encoded_image = base64.b64encode(file_bytes).decode('utf-8')
         
-        # We specify jpeg safely here since Llama Vision accepts simple base64 payload strings 
-        # without heavily dictating strictly between png/jpeg parsing natively.
-        image_url = f"data:image/jpeg;base64,{encoded_image}"
-        
-        logger.info("Initializing Groq Vision extraction for image...")
+        logger.info("Initializing Gemini Vision extraction for image...")
 
-        completion = client.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",
-            messages=[{
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+        
+        system_instruction = {
+            "parts": [{"text": "You are a pure Optical Character Recognition system. Extract all text from this image precisely as written. Do not add any conversational filler. Just the extracted text. If it is a diagram, describe the keys and flowchart content."}]
+        }
+        
+        payload = {
+            "systemInstruction": system_instruction,
+            "contents": [{
                 "role": "user",
-                "content": [
+                "parts": [
                     {
-                        "type": "text", 
-                        "text": "You are a pure Optical Character Recognition system. Extract all text from this image precisely as written. Do not add any conversational filler. Just the extracted text. If it is a diagram, describe the keys and flowchart content."
-                    },
-                    {
-                        "type": "image_url", 
-                        "image_url": {
-                            "url": image_url
+                        "inlineData": {
+                            "mimeType": "image/jpeg",
+                            "data": encoded_image
                         }
                     }
                 ]
             }],
-            temperature=0,
-            max_tokens=4000
-        )
+            "generationConfig": {
+                "temperature": 0,
+                "maxOutputTokens": 4000
+            }
+        }
         
-        extracted_text = completion.choices[0].message.content
+        res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
+        
+        if res.status_code != 200:
+            raise Exception(f"Gemini API error: {res.text}")
+            
+        res_data = res.json()
+        extracted_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+        
         logger.info(f"Vision OCR Complete. Extracted {len(extracted_text)} characters.")
         return extracted_text.strip()
         
     except Exception as e:
-        logger.error(f"Groq Vision OCR failed: {str(e)}")
-        raise ValueError("Failed to extract text from image using Vision API.")
-
+        logger.error(f"Vision OCR failed: {str(e)}")
+        raise ValueError(f"Failed to extract text from image using Vision API: {str(e)}")

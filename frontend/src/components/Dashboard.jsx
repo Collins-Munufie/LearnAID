@@ -10,7 +10,7 @@ import ContributionHeatmap from './ContributionHeatmap';
 import StudyRooms from './StudyRooms';
 
 const WeeklyActivityChart = lazy(() => import('./WeeklyActivityChart'));
-const MemoryAnalytics = lazy(() => import('./MemoryAnalytics'));
+
 
 export default function Dashboard() {
   const { user, fetchUser, logout, loading: authLoading } = useAuth();
@@ -146,8 +146,8 @@ export default function Dashboard() {
     const summary = sets.reduce((acc, set) => {
       // Robust mapping supporting both lightweight metadata endpoint and fallback full schema
       const totalCards = typeof set.flashcards_count === 'number' ? set.flashcards_count : (set.flashcards ? set.flashcards.length : 0);
-      const mastered = typeof set.mastered_count === 'number' ? set.mastered_count : (set.flashcards ? set.flashcards.filter(c => c.mastery_level === 3).length : 0);
-      const setPercent = totalCards > 0 ? Math.round((mastered / totalCards) * 100) : 0;
+      const masteryScore = typeof set.mastery_score === 'number' ? set.mastery_score : (set.flashcards ? set.flashcards.reduce((acc, c) => acc + (c.mastery_level || 0), 0) : 0);
+      const setPercent = totalCards > 0 ? Math.round((masteryScore / (totalCards * 3)) * 100) : 0;
       
       let generatedModes = [];
       if (set.generated_modes) {
@@ -188,7 +188,7 @@ export default function Dashboard() {
 
       return {
         totalCards: acc.totalCards + totalCards,
-        masteredCards: acc.masteredCards + mastered,
+        masteredCards: acc.masteredCards + (typeof set.mastered_count === 'number' ? set.mastered_count : (set.flashcards ? set.flashcards.filter(c => c.mastery_level === 3).length : 0)),
         modeCounts,
         mappedSets: [...acc.mappedSets, mappedSet],
       };
@@ -472,7 +472,7 @@ export default function Dashboard() {
           {/* MEMORY ANALYTICS */}
           <div className="mb-14">
             <Suspense fallback={<div className="h-64 w-full bg-brand-surface animate-pulse border border-brand-border rounded-3xl" />}>
-               <MemoryAnalytics />
+               
             </Suspense>
           </div>
 
