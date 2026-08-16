@@ -95,7 +95,7 @@ export const getErrorMessage = (error, fallback = 'Something went wrong. Please 
 
   if (isNetworkError) {
     const endpoint = error.config?.url ? ` (endpoint: ${error.config.url})` : '';
-    let msg = `Connection Failed${endpoint}: Unable to reach the server. Please ensure the backend service is running (usually at http://127.0.0.1:8000) and your API URL is correctly configured.`;
+    let msg = `Connection Failed${endpoint}: Unable to reach the server. Please ensure the backend service is running  and your API URL is correctly configured.`;
     
     if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
       if (!import.meta.env.VITE_API_BASE_URL) {

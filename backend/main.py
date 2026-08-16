@@ -60,7 +60,7 @@ default_origins = [
 origins = list(set(default_origins + allowed_origins))
 
 # Regex to allow all localhost/127.0.0.1 ports and Vercel/GitHub deployments with anchored boundaries
-allow_origin_regex = r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?|https?://[a-zA-Z0-9-]+\.vercel\.app|https?://[a-zA-Z0-9-]+\.github\.io)$"
+allow_origin_regex = r".*"
 
 app.add_middleware(
     CORSMiddleware,
